@@ -29,10 +29,10 @@ import Spinner from '../Spinner';
 import { ChatInput } from './ChatInput';
 import { ChatLoader } from './ChatLoader';
 import { ErrorMessageDiv } from './ErrorMessageDiv';
+import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { ModelSelect } from './ModelSelect';
 import { SystemPrompt } from './SystemPrompt';
 import { TemperatureSlider } from './Temperature';
-import { MemoizedChatMessage } from './MemoizedChatMessage';
 
 interface Props {
   stopConversationRef: MutableRefObject<boolean>;
@@ -69,9 +69,19 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = useCallback(
-    async (message: Message, deleteCount = 0, plugin: Plugin | null = null) => {
-      if (selectedConversation) {
-        let updatedConversation: Conversation;
+    async (
+      message: Message,
+      deleteCount = 0,
+      plugin: Plugin | null = null,
+      messageIndex: number | null = null,
+    ) => {
+      if (!selectedConversation) {
+        return;
+      }
+
+      let updatedConversation: Conversation;
+      if (message.role === 'user' || messageIndex === null) {
+        // 原来的逻辑：如果编辑了一条 user 的消息，后面的消息都会删掉，然后重新生成
         if (deleteCount) {
           const updatedMessages = [...selectedConversation.messages];
           for (let i = 0; i < deleteCount; i++) {
@@ -91,158 +101,178 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           field: 'selectedConversation',
           value: updatedConversation,
         });
-        homeDispatch({ field: 'loading', value: true });
-        homeDispatch({ field: 'messageIsStreaming', value: true });
-        const chatBody: ChatBody = {
-          model: updatedConversation.model,
-          messages: updatedConversation.messages,
-          key: apiKey,
-          prompt: updatedConversation.prompt,
-          temperature: updatedConversation.temperature,
-        };
-        const endpoint = getEndpoint(plugin);
-        let body;
-        if (!plugin) {
-          body = JSON.stringify(chatBody);
-        } else {
-          body = JSON.stringify({
-            ...chatBody,
-            googleAPIKey: pluginKeys
-              .find((key) => key.pluginId === 'google-search')
-              ?.requiredKeys.find((key) => key.key === 'GOOGLE_API_KEY')?.value,
-            googleCSEId: pluginKeys
-              .find((key) => key.pluginId === 'google-search')
-              ?.requiredKeys.find((key) => key.key === 'GOOGLE_CSE_ID')?.value,
-          });
-        }
-        const controller = new AbortController();
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+      } else {
+        // 新加的逻辑：只会编辑当前的 assistant
+        const updatedMessages = selectedConversation.messages.map(
+          (v: Message, index: number) => {
+            return index === messageIndex ? message : v;
           },
-          signal: controller.signal,
-          body,
+        );
+
+        updatedConversation = {
+          ...selectedConversation,
+          messages: [...updatedMessages],
+        };
+
+        homeDispatch({
+          field: 'selectedConversation',
+          value: updatedConversation,
         });
-        if (!response.ok) {
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-          toast.error(response.statusText);
-          return;
-        }
-        const data = response.body;
-        if (!data) {
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-          return;
-        }
-        if (!plugin) {
-          if (updatedConversation.messages.length === 1) {
-            const { content } = message;
-            const customName =
-              content.length > 30 ? content.substring(0, 30) + '...' : content;
-            updatedConversation = {
-              ...updatedConversation,
-              name: customName,
-            };
-          }
-          homeDispatch({ field: 'loading', value: false });
-          const reader = data.getReader();
-          const decoder = new TextDecoder();
-          let done = false;
-          let isFirst = true;
-          let text = '';
-          while (!done) {
-            if (stopConversationRef.current === true) {
-              controller.abort();
-              done = true;
-              break;
-            }
-            const { value, done: doneReading } = await reader.read();
-            done = doneReading;
-            const chunkValue = decoder.decode(value);
-            text += chunkValue;
-            if (isFirst) {
-              isFirst = false;
-              const updatedMessages: Message[] = [
-                ...updatedConversation.messages,
-                { role: 'assistant', content: chunkValue },
-              ];
-              updatedConversation = {
-                ...updatedConversation,
-                messages: updatedMessages,
-              };
-              homeDispatch({
-                field: 'selectedConversation',
-                value: updatedConversation,
-              });
-            } else {
-              const updatedMessages: Message[] =
-                updatedConversation.messages.map((message, index) => {
-                  if (index === updatedConversation.messages.length - 1) {
-                    return {
-                      ...message,
-                      content: text,
-                    };
-                  }
-                  return message;
-                });
-              updatedConversation = {
-                ...updatedConversation,
-                messages: updatedMessages,
-              };
-              homeDispatch({
-                field: 'selectedConversation',
-                value: updatedConversation,
-              });
-            }
-          }
-          saveConversation(updatedConversation);
-          const updatedConversations: Conversation[] = conversations.map(
-            (conversation) => {
-              if (conversation.id === selectedConversation.id) {
-                return updatedConversation;
-              }
-              return conversation;
-            },
-          );
-          if (updatedConversations.length === 0) {
-            updatedConversations.push(updatedConversation);
-          }
-          homeDispatch({ field: 'conversations', value: updatedConversations });
-          saveConversations(updatedConversations);
-          homeDispatch({ field: 'messageIsStreaming', value: false });
-        } else {
-          const { answer } = await response.json();
-          const updatedMessages: Message[] = [
-            ...updatedConversation.messages,
-            { role: 'assistant', content: answer },
-          ];
+        return;
+      }
+
+      homeDispatch({ field: 'loading', value: true });
+      homeDispatch({ field: 'messageIsStreaming', value: true });
+      const chatBody: ChatBody = {
+        model: updatedConversation.model,
+        messages: updatedConversation.messages,
+        key: apiKey,
+        prompt: updatedConversation.prompt,
+        temperature: updatedConversation.temperature,
+      };
+      const endpoint = getEndpoint(plugin);
+      let body;
+      if (!plugin) {
+        body = JSON.stringify(chatBody);
+      } else {
+        body = JSON.stringify({
+          ...chatBody,
+          googleAPIKey: pluginKeys
+            .find((key) => key.pluginId === 'google-search')
+            ?.requiredKeys.find((key) => key.key === 'GOOGLE_API_KEY')?.value,
+          googleCSEId: pluginKeys
+            .find((key) => key.pluginId === 'google-search')
+            ?.requiredKeys.find((key) => key.key === 'GOOGLE_CSE_ID')?.value,
+        });
+      }
+      const controller = new AbortController();
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+        body,
+      });
+      if (!response.ok) {
+        homeDispatch({ field: 'loading', value: false });
+        homeDispatch({ field: 'messageIsStreaming', value: false });
+        toast.error(response.statusText);
+        return;
+      }
+      const data = response.body;
+      if (!data) {
+        homeDispatch({ field: 'loading', value: false });
+        homeDispatch({ field: 'messageIsStreaming', value: false });
+        return;
+      }
+      if (!plugin) {
+        if (updatedConversation.messages.length === 1) {
+          const { content } = message;
+          const customName =
+            content.length > 30 ? content.substring(0, 30) + '...' : content;
           updatedConversation = {
             ...updatedConversation,
-            messages: updatedMessages,
+            name: customName,
           };
-          homeDispatch({
-            field: 'selectedConversation',
-            value: updateConversation,
-          });
-          saveConversation(updatedConversation);
-          const updatedConversations: Conversation[] = conversations.map(
-            (conversation) => {
-              if (conversation.id === selectedConversation.id) {
-                return updatedConversation;
-              }
-              return conversation;
-            },
-          );
-          if (updatedConversations.length === 0) {
-            updatedConversations.push(updatedConversation);
-          }
-          homeDispatch({ field: 'conversations', value: updatedConversations });
-          saveConversations(updatedConversations);
-          homeDispatch({ field: 'loading', value: false });
-          homeDispatch({ field: 'messageIsStreaming', value: false });
         }
+        homeDispatch({ field: 'loading', value: false });
+        const reader = data.getReader();
+        const decoder = new TextDecoder();
+        let done = false;
+        let isFirst = true;
+        let text = '';
+        while (!done) {
+          if (stopConversationRef.current === true) {
+            controller.abort();
+            done = true;
+            break;
+          }
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          const chunkValue = decoder.decode(value);
+          text += chunkValue;
+          if (isFirst) {
+            isFirst = false;
+            const updatedMessages: Message[] = [
+              ...updatedConversation.messages,
+              { role: 'assistant', content: chunkValue },
+            ];
+            updatedConversation = {
+              ...updatedConversation,
+              messages: updatedMessages,
+            };
+            homeDispatch({
+              field: 'selectedConversation',
+              value: updatedConversation,
+            });
+          } else {
+            const updatedMessages: Message[] = updatedConversation.messages.map(
+              (message, index) => {
+                if (index === updatedConversation.messages.length - 1) {
+                  return {
+                    ...message,
+                    content: text,
+                  };
+                }
+                return message;
+              },
+            );
+            updatedConversation = {
+              ...updatedConversation,
+              messages: updatedMessages,
+            };
+            homeDispatch({
+              field: 'selectedConversation',
+              value: updatedConversation,
+            });
+          }
+        }
+        saveConversation(updatedConversation);
+        const updatedConversations: Conversation[] = conversations.map(
+          (conversation) => {
+            if (conversation.id === selectedConversation.id) {
+              return updatedConversation;
+            }
+            return conversation;
+          },
+        );
+        if (updatedConversations.length === 0) {
+          updatedConversations.push(updatedConversation);
+        }
+        homeDispatch({ field: 'conversations', value: updatedConversations });
+        saveConversations(updatedConversations);
+        homeDispatch({ field: 'messageIsStreaming', value: false });
+      } else {
+        const { answer } = await response.json();
+        const updatedMessages: Message[] = [
+          ...updatedConversation.messages,
+          { role: 'assistant', content: answer },
+        ];
+        updatedConversation = {
+          ...updatedConversation,
+          messages: updatedMessages,
+        };
+        homeDispatch({
+          field: 'selectedConversation',
+          value: updateConversation,
+        });
+        saveConversation(updatedConversation);
+        const updatedConversations: Conversation[] = conversations.map(
+          (conversation) => {
+            if (conversation.id === selectedConversation.id) {
+              return updatedConversation;
+            }
+            return conversation;
+          },
+        );
+        if (updatedConversations.length === 0) {
+          updatedConversations.push(updatedConversation);
+        }
+        homeDispatch({ field: 'conversations', value: updatedConversations });
+        saveConversations(updatedConversations);
+        homeDispatch({ field: 'loading', value: false });
+        homeDispatch({ field: 'messageIsStreaming', value: false });
       }
     },
     [
@@ -474,6 +504,8 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                       handleSend(
                         editedMessage,
                         selectedConversation?.messages.length - index,
+                        null,
+                        index,
                       );
                     }}
                   />
