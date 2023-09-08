@@ -8,13 +8,18 @@ export type RequestWithBodyModel = RequestModel & {
   body?: object | FormData;
 };
 
+const isProduction = process.env.NODE_ENV === 'production';
+const base_url = isProduction ? '' : 'http://127.0.0.1:8000';
+
 export const useFetch = () => {
   const handleFetch = async (
     url: string,
     request: any,
     signal?: AbortSignal,
   ) => {
-    const requestUrl = request?.params ? `${url}${request.params}` : url;
+    const requestUrl = request?.params
+      ? `${base_url}${url}${request.params}`
+      : base_url + url;
 
     const requestBody = request?.body
       ? request.body instanceof FormData
