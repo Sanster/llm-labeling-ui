@@ -14,9 +14,9 @@ import {
   useState,
 } from 'react';
 
-import { Conversation } from '@/types/chat';
+import HomeContext from '@/utils/home.context';
 
-import HomeContext from '@/pages/home.context';
+import { Conversation } from '@/types/chat';
 
 import SidebarActionButton from '@/components/Buttons/SidebarActionButton';
 import ChatbarContext from '@/components/Chatbar/Chatbar.context';

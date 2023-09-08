@@ -4,11 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { useCreateReducer } from '@/hooks/useCreateReducer';
 
 import { savePrompts } from '@/utils/app/prompts';
+import HomeContext from '@/utils/home.context';
 
 import { OpenAIModels } from '@/types/openai';
 import { Prompt } from '@/types/prompt';
-
-import HomeContext from '@/pages/home.context';
 
 import { PromptFolders } from './components/PromptFolders';
 import { PromptbarSettings } from './components/PromptbarSettings';

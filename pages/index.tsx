@@ -9,6 +9,7 @@ import { useCreateReducer } from '@/hooks/useCreateReducer';
 import useErrorService from '@/services/errorService';
 import useApiService from '@/services/useApiService';
 
+import HomeContext from '../utils/home.context';
 import {
   cleanConversationHistory,
   cleanSelectedConversation,
@@ -22,6 +23,7 @@ import {
 import { saveFolders } from '@/utils/app/folders';
 import { savePrompts } from '@/utils/app/prompts';
 import { getSettings } from '@/utils/app/settings';
+import { HomeInitialState, initialState } from '@/utils/home.state';
 
 import { Conversation } from '@/types/chat';
 import { KeyValuePair } from '@/types/data';
@@ -33,9 +35,6 @@ import { Chat } from '@/components/Chat/Chat';
 import { Chatbar } from '@/components/Chatbar/Chatbar';
 import { Navbar } from '@/components/Mobile/Navbar';
 import Promptbar from '@/components/Promptbar';
-
-import HomeContext from './home.context';
-import { HomeInitialState, initialState } from './home.state';
 
 import { v4 as uuidv4 } from 'uuid';
 

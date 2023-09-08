@@ -19,11 +19,10 @@ import {
   updateConversation,
 } from '@/utils/app/conversation';
 import { throttle } from '@/utils/data/throttle';
+import HomeContext from '@/utils/home.context';
 
 import { ChatBody, Conversation, Message } from '@/types/chat';
 import { Plugin } from '@/types/plugin';
-
-import HomeContext from '@/pages/home.context';
 
 import Spinner from '../Spinner';
 import { ChatInput } from './ChatInput';

@@ -14,9 +14,9 @@ import {
   useState,
 } from 'react';
 
-import { FolderInterface } from '@/types/folder';
+import HomeContext from '@/utils/home.context';
 
-import HomeContext from '@/pages/home.context';
+import { FolderInterface } from '@/types/folder';
 
 import SidebarActionButton from '@/components/Buttons/SidebarActionButton';
 

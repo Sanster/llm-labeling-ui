@@ -8,13 +8,12 @@ import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE } from '@/utils/app/const';
 import { saveConversation, saveConversations } from '@/utils/app/conversation';
 import { saveFolders } from '@/utils/app/folders';
 import { exportData, importData } from '@/utils/app/importExport';
+import HomeContext from '@/utils/home.context';
 
 import { Conversation } from '@/types/chat';
 import { LatestExportFormat, SupportedExportFormats } from '@/types/export';
 import { OpenAIModels } from '@/types/openai';
 import { PluginKey } from '@/types/plugin';
-
-import HomeContext from '@/pages/home.context';
 
 import { ChatFolders } from './components/ChatFolders';
 import { ChatbarSettings } from './components/ChatbarSettings';

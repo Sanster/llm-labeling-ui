@@ -3,9 +3,9 @@ import { useContext } from 'react';
 
 import { useTranslation } from 'next-i18next';
 
-import { OpenAIModel } from '@/types/openai';
+import HomeContext from '@/utils/home.context';
 
-import HomeContext from '@/pages/home.context';
+import { OpenAIModel } from '@/types/openai';
 
 import { SystemPrompt } from './SystemPrompt';
 

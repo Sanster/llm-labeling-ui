@@ -11,10 +11,9 @@ import { FC, memo, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'next-i18next';
 
 import { updateConversation } from '@/utils/app/conversation';
+import HomeContext from '@/utils/home.context';
 
 import { Message } from '@/types/chat';
-
-import HomeContext from '@/pages/home.context';
 
 import { CodeBlock } from '../Markdown/CodeBlock';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';

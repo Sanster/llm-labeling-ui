@@ -1,8 +1,8 @@
 import { useContext } from 'react';
 
-import { FolderInterface } from '@/types/folder';
+import HomeContext from '@/utils/home.context';
 
-import HomeContext from '@/pages/home.context';
+import { FolderInterface } from '@/types/folder';
 
 import Folder from '@/components/Folder';
 import { PromptComponent } from '@/components/Promptbar/components/Prompt';

@@ -18,11 +18,11 @@ import {
 
 import { useTranslation } from 'next-i18next';
 
+import HomeContext from '@/utils/home.context';
+
 import { Message } from '@/types/chat';
 import { Plugin } from '@/types/plugin';
 import { Prompt } from '@/types/prompt';
-
-import HomeContext from '@/pages/home.context';
 
 import { PluginSelect } from './PluginSelect';
 import { PromptList } from './PromptList';
