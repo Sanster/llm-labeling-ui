@@ -7,11 +7,13 @@ import { OpenAIModel } from '@/types/openai';
 
 import HomeContext from '@/pages/api/home/home.context';
 
+import { SystemPrompt } from './SystemPrompt';
+
 export const ModelSelect = () => {
   const { t } = useTranslation('chat');
 
   const {
-    state: { selectedConversation, models, defaultModelId },
+    state: { selectedConversation, models, defaultModelId, prompts },
     handleUpdateConversation,
     dispatch: homeDispatch,
   } = useContext(HomeContext);
@@ -51,7 +53,7 @@ export const ModelSelect = () => {
           ))}
         </select>
       </div>
-      <div className="w-full mt-3 text-left text-neutral-700 dark:text-neutral-400 flex items-center">
+      <div className="w-full mt-3 mb-3 text-left text-neutral-700 dark:text-neutral-400 flex items-center">
         <a
           href="https://platform.openai.com/account/usage"
           target="_blank"
@@ -61,6 +63,21 @@ export const ModelSelect = () => {
           {t('View Account Usage')}
         </a>
       </div>
+
+      {selectedConversation ? (
+        <SystemPrompt
+          conversation={selectedConversation}
+          prompts={prompts}
+          onChangePrompt={(prompt) =>
+            handleUpdateConversation(selectedConversation, {
+              key: 'prompt',
+              value: prompt,
+            })
+          }
+        />
+      ) : (
+        <></>
+      )}
     </div>
   );
 };
