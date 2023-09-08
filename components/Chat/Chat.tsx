@@ -23,7 +23,7 @@ import { throttle } from '@/utils/data/throttle';
 import { ChatBody, Conversation, Message } from '@/types/chat';
 import { Plugin } from '@/types/plugin';
 
-import HomeContext from '@/pages/api/home/home.context';
+import HomeContext from '@/pages/home.context';
 
 import Spinner from '../Spinner';
 import { ChatInput } from './ChatInput';
@@ -443,7 +443,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                     <div className="flex h-full flex-col space-y-4 rounded-lg border border-neutral-200 p-4 dark:border-neutral-600">
                       <ModelSelect />
 
-                      <SystemPrompt
+                      {/* <SystemPrompt
                         conversation={selectedConversation}
                         prompts={prompts}
                         onChangePrompt={(prompt) =>
@@ -452,7 +452,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                             value: prompt,
                           })
                         }
-                      />
+                      /> */}
 
                       <TemperatureSlider
                         label={t('Temperature')}

@@ -16,7 +16,7 @@ import {
 
 import { FolderInterface } from '@/types/folder';
 
-import HomeContext from '@/pages/api/home/home.context';
+import HomeContext from '@/pages/home.context';
 
 import SidebarActionButton from '@/components/Buttons/SidebarActionButton';
 
