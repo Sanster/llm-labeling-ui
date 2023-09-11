@@ -2,28 +2,32 @@ import { useCallback } from 'react';
 
 import { useFetch } from '@/hooks/useFetch';
 
+import { Conversation } from '@/types/chat';
+
 export interface GetModelsRequestProps {
   key: string;
 }
 
+export interface GetConversationsRequestProps {
+  page: number;
+  pageSize: number;
+}
+
+interface ConversationResponse {
+  created_at: string;
+  updated_at: string;
+  id: string;
+  data: Conversation;
+}
+
+export interface GetConversationsResponseProps {
+  totalPages: number;
+  page: number;
+  conversations: ConversationResponse[];
+}
+
 const useApiService = () => {
   const fetchService = useFetch();
-
-  // const getModels = useCallback(
-  // 	(
-  // 		params: GetManagementRoutineInstanceDetailedParams,
-  // 		signal?: AbortSignal
-  // 	) => {
-  // 		return fetchService.get<GetManagementRoutineInstanceDetailed>(
-  // 			`/v1/ManagementRoutines/${params.managementRoutineId}/instances/${params.instanceId
-  // 			}?sensorGroupIds=${params.sensorGroupId ?? ''}`,
-  // 			{
-  // 				signal,
-  // 			}
-  // 		);
-  // 	},
-  // 	[fetchService]
-  // );
 
   const getModels = useCallback(
     (params: GetModelsRequestProps, signal?: AbortSignal) => {
@@ -38,8 +42,25 @@ const useApiService = () => {
     [fetchService],
   );
 
+  const getConversations = useCallback(
+    (params: GetConversationsRequestProps, signal?: AbortSignal) => {
+      return fetchService.post<GetConversationsResponseProps>(
+        `/api/conversations`,
+        {
+          body: { page: params.page, pageSize: params.pageSize },
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal,
+        },
+      );
+    },
+    [fetchService],
+  );
+
   return {
     getModels,
+    getConversations,
   };
 };
 

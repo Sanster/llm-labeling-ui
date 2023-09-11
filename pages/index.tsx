@@ -5,6 +5,7 @@ import { useTranslation } from 'next-i18next';
 import Head from 'next/head';
 
 import { useCreateReducer } from '@/hooks/useCreateReducer';
+import { useFetch } from '@/hooks/useFetch';
 
 import useErrorService from '@/services/errorService';
 import useApiService from '@/services/useApiService';
@@ -43,8 +44,9 @@ const Home = () => {
   const serverSidePluginKeysSet = false;
   const defaultModelId = OpenAIModelID.GPT_3_5;
   const { t } = useTranslation('chat');
-  const { getModels } = useApiService();
+  const { getModels, getConversations } = useApiService();
   const { getModelsError } = useErrorService();
+  const fetchService = useFetch();
   const [initialRender, setInitialRender] = useState<boolean>(true);
 
   const contextValue = useCreateReducer<HomeInitialState>({
@@ -59,6 +61,7 @@ const Home = () => {
       conversations,
       selectedConversation,
       prompts,
+      page,
       temperature,
     },
     dispatch,
@@ -84,6 +87,34 @@ const Home = () => {
   useEffect(() => {
     if (data) dispatch({ field: 'models', value: data });
   }, [data, dispatch]);
+
+  const {
+    data: conversationsData,
+    error: conversationsError,
+    refetch: _,
+  } = useQuery(
+    ['GetConversations', page, 50],
+    ({ signal }) => {
+      console.log(`fetch conversations ${page}`);
+      return getConversations(
+        {
+          page: page,
+          pageSize: 50,
+        },
+        signal,
+      );
+    },
+    { enabled: true, refetchOnMount: false },
+  );
+
+  useEffect(() => {
+    const convs = conversationsData?.conversations?.map((c) => c.data);
+    if (convs) {
+      dispatch({ field: 'selectedConversation', value: convs[0] });
+      dispatch({ field: 'conversations', value: convs.reverse() });
+      dispatch({ field: 'totalPages', value: conversationsData?.totalPages });
+    }
+  }, [conversationsData, dispatch]);
 
   // 不注释这个会导致无限循环
   // useEffect(() => {
@@ -169,7 +200,7 @@ const Home = () => {
 
   // CONVERSATION OPERATIONS  --------------------------------------------
 
-  const handleNewConversation = () => {
+  const handleNewConversation = async () => {
     const lastConversation = conversations[conversations.length - 1];
 
     const newConversation: Conversation = {
@@ -187,6 +218,21 @@ const Home = () => {
       folderId: null,
     };
 
+    try {
+      const res = await fetchService.post<Conversation>(
+        '/api/create_conversation',
+        {
+          body: newConversation,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    } catch (e) {
+      alert(e);
+      return;
+    }
+
     const updatedConversations = [...conversations, newConversation];
 
     dispatch({ field: 'selectedConversation', value: newConversation });
@@ -198,7 +244,7 @@ const Home = () => {
     dispatch({ field: 'loading', value: false });
   };
 
-  const handleUpdateConversation = (
+  const handleUpdateConversation = async (
     conversation: Conversation,
     data: KeyValuePair,
   ) => {
@@ -206,6 +252,21 @@ const Home = () => {
       ...conversation,
       [data.key]: data.value,
     };
+
+    try {
+      const res = await fetchService.post<Conversation>(
+        '/api/update_conversation',
+        {
+          body: updatedConversation,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    } catch (e) {
+      alert(e);
+      return;
+    }
 
     const { single, all } = updateConversation(
       updatedConversation,

@@ -38,23 +38,23 @@ export const ChatbarSettings = () => {
 
   return (
     <div className="flex flex-col items-center space-y-1 border-t border-white/20 pt-1 text-sm">
-      {conversations.length > 0 ? (
+      {/* {conversations.length > 0 ? (
         <ClearConversations onClearConversations={handleClearConversations} />
-      ) : null}
+      ) : null} */}
 
-      <Import onImport={handleImportConversations} />
+      {/* <Import onImport={handleImportConversations} /> */}
 
-      <SidebarButton
+      {/* <SidebarButton
         text={t('Export data')}
         icon={<IconFileExport size={18} />}
         onClick={() => handleExportData()}
-      />
+      /> */}
 
-      <SidebarButton
+      {/* <SidebarButton
         text={t('Settings')}
         icon={<IconSettings size={18} />}
         onClick={() => setIsSettingDialog(true)}
-      />
+      /> */}
 
       {!serverSideApiKeyIsSet ? (
         <Key apiKey={apiKey} onApiKeyChange={handleApiKeyChange} />

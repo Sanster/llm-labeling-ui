@@ -1,3 +1,4 @@
+import math
 import os
 from typing import List
 from fastapi import APIRouter, FastAPI, HTTPException
@@ -5,15 +6,26 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 import openai
 
-from schema import ChatMessage, ChatRequest, ModelsRequest, OpenAIModelID, Config
+from db_schema import DBManager, Folder, PromptTemp, Conversation as DBConversation
+from schema import (
+    ChatMessage,
+    ChatRequest,
+    ModelsRequest,
+    OpenAIModelID,
+    Config,
+    GetConversionsRequest,
+    GetConversionsResponse,
+    Conversation,
+)
 
 error503 = "OpenAI server is busy, try again later"
 
 
 class Api:
-    def __init__(self, app: FastAPI, config: Config):
+    def __init__(self, app: FastAPI, config: Config, db: DBManager):
         self.router = APIRouter()
         self.app = app
+        self.db = db
         self.app.mount(
             "/static", StaticFiles(directory=config.web_app_dir), name="static"
         )
@@ -38,6 +50,48 @@ class Api:
             response_model=str,
         )
 
+        self.add_api_route(
+            "/api/folders",
+            self.get_folders,
+            methods=["GET"],
+            response_model=List[Folder],
+        )
+
+        self.add_api_route(
+            "/api/prompt_temps",
+            self.get_prompt_temps,
+            methods=["GET"],
+            response_model=List[PromptTemp],
+        )
+
+        self.add_api_route(
+            "/api/conversations",
+            self.get_conversations,
+            methods=["POST"],
+            response_model=GetConversionsResponse,
+        )
+
+        self.add_api_route(
+            "/api/create_conversation",
+            self.create_conversation,
+            methods=["POST"],
+            # response_model=Conversation,
+        )
+
+        self.add_api_route(
+            "/api/update_conversation",
+            self.update_conversation,
+            methods=["POST"],
+            # response_model=Conversation,
+        )
+
+        self.add_api_route(
+            "/api/delete_conversation",
+            self.delete_conversation,
+            methods=["POST"],
+            # response_model=Conversation,
+        )
+
     def main(self):
         web_app_dir = "/Users/cwq/code/github/chatbot-ui/out"
         return FileResponse(os.path.join(web_app_dir, "index.html"))
@@ -54,8 +108,6 @@ class Api:
                     }
                 )
         return res
-
-    error503 = "OpenAI server is busy, try again later"
 
     def chat(self, req: ChatRequest):
         messages = req.messages
@@ -87,6 +139,39 @@ class Api:
                 raise HTTPException(503, error503)
 
         return StreamingResponse(content=gen(), media_type="text/event-stream")
+
+    def get_folders(self) -> List[Folder]:
+        return self.db.get_folders()
+
+    def get_prompt_temps(self) -> List[PromptTemp]:
+        return self.db.get_prompt_temps()
+
+    def get_conversations(self, req: GetConversionsRequest) -> GetConversionsResponse:
+        conversions_count = self.db.count_conversations()
+        total_pages = math.ceil(conversions_count / req.pageSize)
+        return GetConversionsResponse(
+            conversations=self.db.get_conversations(
+                page=req.page, page_size=req.pageSize
+            ),
+            page=req.page,
+            totalPages=total_pages,
+        )
+
+    def update_conversation(self, req: Conversation):
+        db_req = DBConversation(id=req.id, data=req.dict())
+        self.db.update_conversation(db_req)
+        return "ok", 200
+        # return Conversation(**db_res.data)
+
+    def create_conversation(self, req: Conversation):
+        db_req = DBConversation(id=req.id, data=req.dict())
+        self.db.create_conversation(db_req)
+        return "ok", 200
+        # return Conversation(**db_res.data)
+
+    def delete_conversation(self, req: Conversation):
+        self.db.delete_conversation(req.id)
+        return "ok", 200
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         return self.app.add_api_route(path, endpoint, **kwargs)

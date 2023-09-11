@@ -3,6 +3,7 @@ import { useCallback, useContext, useEffect } from 'react';
 import { useTranslation } from 'next-i18next';
 
 import { useCreateReducer } from '@/hooks/useCreateReducer';
+import { useFetch } from '@/hooks/useFetch';
 
 import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE } from '@/utils/app/const';
 import { saveConversation, saveConversations } from '@/utils/app/conversation';
@@ -18,6 +19,7 @@ import { PluginKey } from '@/types/plugin';
 import { ChatFolders } from './components/ChatFolders';
 import { ChatbarSettings } from './components/ChatbarSettings';
 import { Conversations } from './components/Conversations';
+import { Paginator } from './components/Paginator';
 
 import Sidebar from '../Sidebar';
 import ChatbarContext from './Chatbar.context';
@@ -27,6 +29,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const Chatbar = () => {
   const { t } = useTranslation('sidebar');
+  const fetchService = useFetch();
 
   const chatBarContextValue = useCreateReducer<ChatbarInitialState>({
     initialState,
@@ -136,7 +139,22 @@ export const Chatbar = () => {
     saveFolders(updatedFolders);
   };
 
-  const handleDeleteConversation = (conversation: Conversation) => {
+  const handleDeleteConversation = async (conversation: Conversation) => {
+    try {
+      const res = await fetchService.post<Conversation>(
+        '/api/delete_conversation',
+        {
+          body: conversation,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    } catch (e) {
+      alert(e);
+      return;
+    }
+
     const updatedConversations = conversations.filter(
       (c) => c.id !== conversation.id,
     );
@@ -224,6 +242,7 @@ export const Chatbar = () => {
         addItemButtonTitle={t('New chat')}
         itemComponent={<Conversations conversations={filteredConversations} />}
         folderComponent={<ChatFolders searchTerm={searchTerm} />}
+        paginatorComponent={<Paginator />}
         items={filteredConversations}
         searchTerm={searchTerm}
         handleSearchTerm={(searchTerm: string) =>
