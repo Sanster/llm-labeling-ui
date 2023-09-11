@@ -25,7 +25,7 @@ import remarkMath from 'remark-math';
 export interface Props {
   message: Message;
   messageIndex: number;
-  onEdit?: (editedMessage: Message) => void;
+  onEdit?: (editedMessage: Message, onlySave: Boolean) => void;
 }
 
 export const ChatMessage: FC<Props> = memo(
@@ -66,7 +66,19 @@ export const ChatMessage: FC<Props> = memo(
     const handleEditMessage = () => {
       if (message.content != messageContent) {
         if (selectedConversation && onEdit) {
-          onEdit({ ...message, content: messageContent });
+          onEdit(
+            { ...message, content: messageContent },
+            message.role === 'assistant',
+          );
+        }
+      }
+      setIsEditing(false);
+    };
+
+    const handleOnlySaveUserMessage = () => {
+      if (message.content != messageContent) {
+        if (selectedConversation && onEdit) {
+          onEdit({ ...message, content: messageContent }, true);
         }
       }
       setIsEditing(false);
@@ -242,13 +254,23 @@ export const ChatMessage: FC<Props> = memo(
 
                   <div className="mt-10 flex justify-center space-x-4">
                     {message.role === 'user' ? (
-                      <button
-                        className="h-[40px] rounded-md bg-blue-500 px-4 py-1 text-sm font-medium text-white enabled:hover:bg-blue-600 disabled:opacity-50"
-                        onClick={handleEditMessage}
-                        disabled={messageContent.trim().length <= 0}
-                      >
-                        {t('Save & Submit')}
-                      </button>
+                      <div className="flex gap-3">
+                        <button
+                          className="h-[40px] rounded-md bg-blue-500 px-4 py-1 text-sm font-medium text-white enabled:hover:bg-blue-600 disabled:opacity-50"
+                          onClick={handleOnlySaveUserMessage}
+                          disabled={messageContent.trim().length <= 0}
+                        >
+                          {t('Save')}
+                        </button>
+
+                        <button
+                          className="h-[40px] rounded-md bg-blue-500 px-4 py-1 text-sm font-medium text-white enabled:hover:bg-blue-600 disabled:opacity-50"
+                          onClick={handleEditMessage}
+                          disabled={messageContent.trim().length <= 0}
+                        >
+                          {t('Save & Submit')}
+                        </button>
+                      </div>
                     ) : (
                       <button
                         className="h-[40px] rounded-md bg-blue-500 px-4 py-1 text-sm font-medium text-white enabled:hover:bg-blue-600 disabled:opacity-50"

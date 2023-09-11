@@ -109,7 +109,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       }
 
       let updatedConversation: Conversation;
-      if (message.role === 'user' || messageIndex === null) {
+      if (messageIndex === null) {
         // 原来的逻辑：如果编辑了一条 user 的消息，后面的消息都会删掉，然后重新生成
         if (deleteCount) {
           const updatedMessages = [...selectedConversation.messages];
@@ -564,15 +564,19 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                     key={index}
                     message={message}
                     messageIndex={index}
-                    onEdit={(editedMessage) => {
+                    onEdit={(editedMessage, onlySave) => {
                       setCurrentMessage(editedMessage);
                       // discard edited message and the ones that come after then resend
-                      handleSend(
-                        editedMessage,
-                        selectedConversation?.messages.length - index,
-                        null,
-                        index,
-                      );
+                      console.log(`onlySave: ${onlySave}`);
+                      if (onlySave) {
+                        handleSend(editedMessage, 0, null, index);
+                      } else {
+                        handleSend(
+                          editedMessage,
+                          selectedConversation?.messages.length - index,
+                          null,
+                        );
+                      }
                     }}
                   />
                 ))}
