@@ -29,6 +29,7 @@ export interface HomeInitialState {
   serverSidePluginKeysSet: boolean;
   page: number;
   totalPages: number;
+  totalConversations: number;
 }
 
 export const initialState: HomeInitialState = {
@@ -55,4 +56,5 @@ export const initialState: HomeInitialState = {
   serverSidePluginKeysSet: false,
   page: 0,
   totalPages: 1,
+  totalConversations: 0,
 };

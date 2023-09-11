@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -57,7 +58,7 @@ def post_worker_init(worker):
 
 
 @typer_app.command()
-def main(
+def start(
     host: str = typer.Option("0.0.0.0"),
     port: int = typer.Option(8000),
     history_file: Path = typer.Option(None, dir_okay=False),
@@ -89,10 +90,29 @@ def main(
         db = DBManager(db_path)
         db = db.create_from_json_file(history_file)
     else:
-        logger.info(f"loading db at {db_path}")
+        logger.warning(f"loading db from {db_path}, data may be different from {history_file}")
         db = DBManager(db_path)
 
     StandaloneApplication(app_factory(), options, config, db).run()
+
+
+@typer_app.command()
+def export(
+    db_path: Path = typer.Option(None, exists=True, dir_okay=False),
+    save_path: Path = typer.Option(None, dir_okay=False),
+    force: bool = typer.Option(False, help="force overwrite save_path if exists"),
+):
+    if save_path and save_path.exists():
+        if not force:
+            raise FileExistsError(f"{save_path} exists, use --force to overwrite")
+
+    if save_path is None:
+        save_path = (
+            db_path.parent / f"{db_path.stem}_{datetime.utcnow().timestamp()}.json"
+        )
+    logger.info(f"Dumping db to {save_path}")
+    db = DBManager(db_path)
+    db.export_to_json_file(save_path)
 
 
 if __name__ == "__main__":

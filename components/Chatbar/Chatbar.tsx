@@ -41,6 +41,7 @@ export const Chatbar = () => {
     handleCreateFolder,
     handleNewConversation,
     handleUpdateConversation,
+    handleDeleteConversation,
   } = useContext(HomeContext);
 
   const {
@@ -137,56 +138,6 @@ export const Chatbar = () => {
 
     homeDispatch({ field: 'folders', value: updatedFolders });
     saveFolders(updatedFolders);
-  };
-
-  const handleDeleteConversation = async (conversation: Conversation) => {
-    try {
-      const res = await fetchService.post<Conversation>(
-        '/api/delete_conversation',
-        {
-          body: conversation,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-    } catch (e) {
-      alert(e);
-      return;
-    }
-
-    const updatedConversations = conversations.filter(
-      (c) => c.id !== conversation.id,
-    );
-
-    homeDispatch({ field: 'conversations', value: updatedConversations });
-    chatDispatch({ field: 'searchTerm', value: '' });
-    saveConversations(updatedConversations);
-
-    if (updatedConversations.length > 0) {
-      homeDispatch({
-        field: 'selectedConversation',
-        value: updatedConversations[updatedConversations.length - 1],
-      });
-
-      saveConversation(updatedConversations[updatedConversations.length - 1]);
-    } else {
-      defaultModelId &&
-        homeDispatch({
-          field: 'selectedConversation',
-          value: {
-            id: uuidv4(),
-            name: t('New Conversation'),
-            messages: [],
-            model: OpenAIModels[defaultModelId],
-            prompt: DEFAULT_SYSTEM_PROMPT,
-            temperature: DEFAULT_TEMPERATURE,
-            folderId: null,
-          },
-        });
-
-      localStorage.removeItem('selectedConversation');
-    }
   };
 
   const handleToggleChatbar = () => {

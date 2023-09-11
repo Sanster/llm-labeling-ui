@@ -1,9 +1,11 @@
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, List
 from uuid import UUID, uuid4
 
 import sqlmodel
+from loguru import logger
 from rich.progress import track
 from sqlalchemy import Column, select
 from sqlmodel import SQLModel, Field, create_engine, Session, JSON
@@ -40,7 +42,10 @@ class PromptTemp(UUIDIDModel, TimestampModel, table=True):
 
 class DBManager:
     def __init__(self, db_path: Path):
-        self.engine = create_engine(f"sqlite:///{db_path}")
+        self.engine = create_engine(
+            f"sqlite:///{db_path}",
+            json_serializer=lambda obj: json.dumps(obj, ensure_ascii=False),
+        )
         SQLModel.metadata.create_all(self.engine)
 
     def create_from_json_file(self, json_p: Path) -> "DBManager":
@@ -68,6 +73,21 @@ class DBManager:
                 session.add(PromptTemp(data=it.dict()))
             session.commit()
         return self
+
+    def export_to_json_file(self, json_p: Path):
+        from schema import ChatBotUIHistory, Conversation as UIConversation
+
+        chatbot_ui_history = ChatBotUIHistory()
+        chatbot_ui_history.folders = self.get_folders()
+        chatbot_ui_history.prompts = self.get_prompt_temps()
+        with Session(self.engine) as session:
+            statement = sqlmodel.select(Conversation)
+            for it in track(session.exec(statement).all()):
+                chatbot_ui_history.history.append(UIConversation(**it.data))
+
+        logger.info(f"export {len(chatbot_ui_history.history)} conversations")
+        with open(json_p, "w", encoding="utf-8") as f:
+            json.dump(chatbot_ui_history.dict(), f, ensure_ascii=False)
 
     def get_folders(self) -> List[Folder]:
         with Session(self.engine) as session:

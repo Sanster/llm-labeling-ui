@@ -95,3 +95,4 @@ class GetConversionsResponse(BaseModel):
     page: int
     totalPages: int
     conversations: List[DBConversation]
+    totalConversations: int

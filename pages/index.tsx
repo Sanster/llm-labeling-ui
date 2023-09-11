@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
 
 import { useTranslation } from 'next-i18next';
@@ -62,7 +63,7 @@ const Home = () => {
       selectedConversation,
       prompts,
       page,
-      temperature,
+      totalPages,
     },
     dispatch,
   } = contextValue;
@@ -91,15 +92,15 @@ const Home = () => {
   const {
     data: conversationsData,
     error: conversationsError,
-    refetch: _,
+    refetch: refetchConversations,
   } = useQuery(
-    ['GetConversations', page, 50],
+    ['GetConversations', page, 20],
     ({ signal }) => {
       console.log(`fetch conversations ${page}`);
       return getConversations(
         {
           page: page,
-          pageSize: 50,
+          pageSize: 20,
         },
         signal,
       );
@@ -108,11 +109,20 @@ const Home = () => {
   );
 
   useEffect(() => {
-    const convs = conversationsData?.conversations?.map((c) => c.data);
+    let convs = conversationsData?.conversations?.map((c) => c.data);
     if (convs) {
-      dispatch({ field: 'selectedConversation', value: convs[0] });
-      dispatch({ field: 'conversations', value: convs.reverse() });
+      if (convs[convs.length - 1].id !== selectedConversation?.id) {
+        dispatch({
+          field: 'selectedConversation',
+          value: convs[convs.length - 1],
+        });
+      }
+      dispatch({ field: 'conversations', value: convs });
       dispatch({ field: 'totalPages', value: conversationsData?.totalPages });
+      dispatch({
+        field: 'totalConversations',
+        value: conversationsData?.totalConversations,
+      });
     }
   }, [conversationsData, dispatch]);
 
@@ -229,17 +239,20 @@ const Home = () => {
         },
       );
     } catch (e) {
-      alert(e);
+      toast.error(`${e}`);
       return;
     }
 
-    const updatedConversations = [...conversations, newConversation];
+    dispatch({ field: 'page', value: totalPages - 1 });
+    refetchConversations();
 
-    dispatch({ field: 'selectedConversation', value: newConversation });
-    dispatch({ field: 'conversations', value: updatedConversations });
+    // const updatedConversations = [...conversations, newConversation];
 
-    saveConversation(newConversation);
-    saveConversations(updatedConversations);
+    // dispatch({ field: 'selectedConversation', value: newConversation });
+    // dispatch({ field: 'conversations', value: updatedConversations });
+
+    // saveConversation(newConversation);
+    // saveConversations(updatedConversations);
 
     dispatch({ field: 'loading', value: false });
   };
@@ -264,7 +277,7 @@ const Home = () => {
         },
       );
     } catch (e) {
-      alert(e);
+      toast.error(`${e}`);
       return;
     }
 
@@ -275,6 +288,57 @@ const Home = () => {
 
     dispatch({ field: 'selectedConversation', value: single });
     dispatch({ field: 'conversations', value: all });
+  };
+
+  const handleDeleteConversation = async (conversation: Conversation) => {
+    try {
+      const res = await fetchService.post<Conversation>(
+        '/api/delete_conversation',
+        {
+          body: conversation,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    } catch (e) {
+      alert(e);
+      return;
+    }
+
+    refetchConversations();
+
+    // const updatedConversations = conversations.filter(
+    //   (c) => c.id !== conversation.id,
+    // );
+
+    // dispatch({ field: 'conversations', value: updatedConversations });
+    // saveConversations(updatedConversations);
+
+    // if (updatedConversations.length > 0) {
+    //   dispatch({
+    //     field: 'selectedConversation',
+    //     value: updatedConversations[updatedConversations.length - 1],
+    //   });
+
+    //   saveConversation(updatedConversations[updatedConversations.length - 1]);
+    // } else {
+    //   defaultModelId &&
+    //     dispatch({
+    //       field: 'selectedConversation',
+    //       value: {
+    //         id: uuidv4(),
+    //         name: t('New Conversation'),
+    //         messages: [],
+    //         model: OpenAIModels[defaultModelId],
+    //         prompt: DEFAULT_SYSTEM_PROMPT,
+    //         temperature: DEFAULT_TEMPERATURE,
+    //         folderId: null,
+    //       },
+    //     });
+
+    //   localStorage.removeItem('selectedConversation');
+    // }
   };
 
   // EFFECTS  --------------------------------------------
@@ -409,6 +473,7 @@ const Home = () => {
         handleUpdateFolder,
         handleSelectConversation,
         handleUpdateConversation,
+        handleDeleteConversation,
       }}
     >
       <Head>

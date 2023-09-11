@@ -24,6 +24,7 @@ export interface GetConversationsResponseProps {
   totalPages: number;
   page: number;
   conversations: ConversationResponse[];
+  totalConversations: number;
 }
 
 const useApiService = () => {

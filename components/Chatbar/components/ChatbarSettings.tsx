@@ -50,11 +50,11 @@ export const ChatbarSettings = () => {
         onClick={() => handleExportData()}
       /> */}
 
-      {/* <SidebarButton
+      <SidebarButton
         text={t('Settings')}
         icon={<IconSettings size={18} />}
         onClick={() => setIsSettingDialog(true)}
-      /> */}
+      />
 
       {!serverSideApiKeyIsSet ? (
         <Key apiKey={apiKey} onApiKeyChange={handleApiKeyChange} />

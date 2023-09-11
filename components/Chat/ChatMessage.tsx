@@ -275,7 +275,7 @@ export const ChatMessage: FC<Props> = memo(
                   {message.content}
                 </div>
               ) : (
-                renderBotMarkdown()
+                <div className="flex-1">{renderBotMarkdown()}</div>
               )}
 
               {!isEditing && (

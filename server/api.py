@@ -155,6 +155,7 @@ class Api:
             ),
             page=req.page,
             totalPages=total_pages,
+            totalConversations=conversions_count,
         )
 
     def update_conversation(self, req: Conversation):

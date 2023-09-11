@@ -12,6 +12,8 @@ import toast from 'react-hot-toast';
 
 import { useTranslation } from 'next-i18next';
 
+import { useFetch } from '@/hooks/useFetch';
+
 import { getEndpoint } from '@/utils/app/api';
 import {
   saveConversation,
@@ -57,6 +59,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
     dispatch: homeDispatch,
   } = useContext(HomeContext);
 
+  const fetchService = useFetch();
   const [currentMessage, setCurrentMessage] = useState<Message>();
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true);
   const [showSettings, setShowSettings] = useState<boolean>(false);
@@ -96,12 +99,13 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             messages: [...selectedConversation.messages, message],
           };
         }
+
         homeDispatch({
           field: 'selectedConversation',
           value: updatedConversation,
         });
       } else {
-        // 新加的逻辑：只会编辑当前的 assistant
+        // 新加的逻辑：只会更新当前的 assistant
         const updatedMessages = selectedConversation.messages.map(
           (v: Message, index: number) => {
             return index === messageIndex ? message : v;
@@ -113,10 +117,28 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
           messages: [...updatedMessages],
         };
 
-        homeDispatch({
-          field: 'selectedConversation',
-          value: updatedConversation,
-        });
+        try {
+          const res = await fetchService.post<Conversation>(
+            '/api/update_conversation',
+            {
+              body: updatedConversation,
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            },
+          );
+        } catch (e) {
+          toast.error(`${e}`);
+          return;
+        }
+
+        const { single, all } = updateConversation(
+          updatedConversation,
+          conversations,
+        );
+
+        homeDispatch({ field: 'selectedConversation', value: single });
+        homeDispatch({ field: 'conversations', value: all });
         return;
       }
 
@@ -239,6 +261,22 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         if (updatedConversations.length === 0) {
           updatedConversations.push(updatedConversation);
         }
+
+        try {
+          const res = await fetchService.post<Conversation>(
+            '/api/update_conversation',
+            {
+              body: updatedConversation,
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            },
+          );
+        } catch (e) {
+          toast.error(`${e}`);
+          return;
+        }
+
         homeDispatch({ field: 'conversations', value: updatedConversations });
         saveConversations(updatedConversations);
         homeDispatch({ field: 'messageIsStreaming', value: false });
@@ -470,7 +508,8 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
               <>
                 <div className="sticky top-0 z-10 flex justify-center border border-b-neutral-300 bg-neutral-100 py-2 text-sm text-neutral-500 dark:border-none dark:bg-[#444654] dark:text-neutral-200">
                   {t('Model')}: {selectedConversation?.model.name} | {t('Temp')}
-                  : {selectedConversation?.temperature} |
+                  : {selectedConversation?.temperature} | Message:{' '}
+                  {selectedConversation?.messages.length} |
                   <button
                     className="ml-2 cursor-pointer hover:opacity-50"
                     onClick={handleSettings}
