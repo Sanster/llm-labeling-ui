@@ -7,13 +7,16 @@ import {
   IconUser,
 } from '@tabler/icons-react';
 import { FC, memo, useContext, useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 
 import { useTranslation } from 'next-i18next';
+
+import { useFetch } from '@/hooks/useFetch';
 
 import { updateConversation } from '@/utils/app/conversation';
 import HomeContext from '@/utils/home.context';
 
-import { Message } from '@/types/chat';
+import { Conversation, Message } from '@/types/chat';
 
 import { CodeBlock } from '../Markdown/CodeBlock';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
@@ -31,6 +34,7 @@ export interface Props {
 export const ChatMessage: FC<Props> = memo(
   ({ message, messageIndex, onEdit }) => {
     const { t } = useTranslation('chat');
+    const fetchService = useFetch();
 
     const {
       state: {
@@ -84,7 +88,7 @@ export const ChatMessage: FC<Props> = memo(
       setIsEditing(false);
     };
 
-    const handleDeleteMessage = () => {
+    const handleDeleteMessage = async () => {
       if (!selectedConversation) return;
 
       const { messages } = selectedConversation;
@@ -104,6 +108,21 @@ export const ChatMessage: FC<Props> = memo(
         ...selectedConversation,
         messages,
       };
+
+      try {
+        const res = await fetchService.post<Conversation>(
+          '/api/update_conversation',
+          {
+            body: updatedConversation,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+      } catch (e) {
+        toast.error(`${e}`);
+        return;
+      }
 
       const { single, all } = updateConversation(
         updatedConversation,
