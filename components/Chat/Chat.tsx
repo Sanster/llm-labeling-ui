@@ -9,10 +9,13 @@ import {
   useState,
 } from 'react';
 import toast from 'react-hot-toast';
+import { useQuery } from 'react-query';
 
 import { useTranslation } from 'next-i18next';
 
 import { useFetch } from '@/hooks/useFetch';
+
+import useApiService from '@/services/useApiService';
 
 import { getEndpoint } from '@/utils/app/api';
 import {
@@ -60,6 +63,30 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
   } = useContext(HomeContext);
 
   const fetchService = useFetch();
+  const { getTokenCount } = useApiService();
+
+  const {
+    data: tokenData,
+    error: tokenError,
+    refetch: tokenRefetch,
+  } = useQuery(
+    ['GetTokenCount', selectedConversation],
+    ({ signal }) => {
+      let text = '';
+      text += selectedConversation ? selectedConversation.prompt : '';
+      selectedConversation?.messages.forEach((message) => {
+        text += message.content;
+      });
+      return getTokenCount(
+        {
+          text,
+        },
+        signal,
+      );
+    },
+    { enabled: true, refetchOnMount: false },
+  );
+
   const [currentMessage, setCurrentMessage] = useState<Message>();
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true);
   const [showSettings, setShowSettings] = useState<boolean>(false);
@@ -509,7 +536,8 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                 <div className="sticky top-0 z-10 flex justify-center border border-b-neutral-300 bg-neutral-100 py-2 text-sm text-neutral-500 dark:border-none dark:bg-[#444654] dark:text-neutral-200">
                   {t('Model')}: {selectedConversation?.model.name} | {t('Temp')}
                   : {selectedConversation?.temperature} | Message:{' '}
-                  {selectedConversation?.messages.length} |
+                  {selectedConversation?.messages.length} | Token:{' '}
+                  {tokenData?.count}
                   <button
                     className="ml-2 cursor-pointer hover:opacity-50"
                     onClick={handleSettings}

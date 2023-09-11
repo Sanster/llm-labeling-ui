@@ -96,3 +96,11 @@ class GetConversionsResponse(BaseModel):
     totalPages: int
     conversations: List[DBConversation]
     totalConversations: int
+
+
+class CountTokensRequest(BaseModel):
+    text: str
+
+
+class CountTokensResponse(BaseModel):
+    count: int

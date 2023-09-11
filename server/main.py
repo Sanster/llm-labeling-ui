@@ -18,11 +18,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 class StandaloneApplication(BaseApplication):
-    def __init__(self, app, options, config, db):
+    def __init__(self, app, options, config, db, tokenizer):
         self.options = options or {}
         self.app = app
         self.config = config
         self.db = db
+        self.tokenizer = tokenizer
         super().__init__()
 
     def load_config(self):
@@ -53,7 +54,7 @@ def app_factory():
 def post_worker_init(worker):
     from api import Api
 
-    api = Api(worker.app.app, worker.app.config, worker.app.db)
+    api = Api(worker.app.app, worker.app.config, worker.app.db, worker.app.tokenizer)
     api.app.include_router(api.router)
 
 
@@ -63,6 +64,7 @@ def start(
     port: int = typer.Option(8000),
     history_file: Path = typer.Option(None, dir_okay=False),
     db_path: Path = typer.Option(None, dir_okay=False),
+    tokenizer: str = typer.Option(None),
 ):
     assert (
         history_file is not None or db_path is not None
@@ -93,7 +95,7 @@ def start(
         logger.warning(f"loading db from {db_path}, data may be different from {history_file}")
         db = DBManager(db_path)
 
-    StandaloneApplication(app_factory(), options, config, db).run()
+    StandaloneApplication(app_factory(), options, config, db, tokenizer).run()
 
 
 @typer_app.command()

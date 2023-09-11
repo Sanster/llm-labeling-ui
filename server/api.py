@@ -16,16 +16,26 @@ from schema import (
     GetConversionsRequest,
     GetConversionsResponse,
     Conversation,
+    CountTokensResponse,
+    CountTokensRequest,
 )
 
 error503 = "OpenAI server is busy, try again later"
 
 
 class Api:
-    def __init__(self, app: FastAPI, config: Config, db: DBManager):
+    def __init__(self, app: FastAPI, config: Config, db: DBManager, tokenizer=None):
         self.router = APIRouter()
         self.app = app
         self.db = db
+        self.tokenizer = tokenizer
+        if self.tokenizer is not None:
+            from transformers import AutoTokenizer
+
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                self.tokenizer, trust_remote_code=True
+            )
+
         self.app.mount(
             "/static", StaticFiles(directory=config.web_app_dir), name="static"
         )
@@ -90,6 +100,13 @@ class Api:
             self.delete_conversation,
             methods=["POST"],
             # response_model=Conversation,
+        )
+
+        self.add_api_route(
+            "/api/count_tokens",
+            self.count_tokens,
+            methods=["POST"],
+            response_model=CountTokensResponse,
         )
 
     def main(self):
@@ -173,6 +190,13 @@ class Api:
     def delete_conversation(self, req: Conversation):
         self.db.delete_conversation(req.id)
         return "ok", 200
+
+    def count_tokens(self, req: CountTokensRequest) -> CountTokensResponse:
+        if self.tokenizer is None:
+            count = 0
+        else:
+            count = len(self.tokenizer(req.text)["input_ids"])
+        return CountTokensResponse(count=count)
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         return self.app.add_api_route(path, endpoint, **kwargs)

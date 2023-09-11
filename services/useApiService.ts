@@ -13,6 +13,13 @@ export interface GetConversationsRequestProps {
   pageSize: number;
 }
 
+export interface GetTokenCountRequestProps {
+  text: string;
+}
+export interface GetTokenCountResponseProps {
+  count: number;
+}
+
 interface ConversationResponse {
   created_at: string;
   updated_at: string;
@@ -59,9 +66,26 @@ const useApiService = () => {
     [fetchService],
   );
 
+  const getTokenCount = useCallback(
+    (params: GetTokenCountRequestProps, signal?: AbortSignal) => {
+      return fetchService.post<GetTokenCountResponseProps>(
+        `/api/count_tokens`,
+        {
+          body: params,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal,
+        },
+      );
+    },
+    [fetchService],
+  );
+
   return {
     getModels,
     getConversations,
+    getTokenCount,
   };
 };
 
