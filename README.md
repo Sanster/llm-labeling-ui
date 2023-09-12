@@ -4,7 +4,7 @@
 
 ## About
 
-**WARNIN**: **This software is mainly developed according to my personal habits and is still under development. We are not responsible for any data loss that may occur during your use.**
+**WARNING**: **This software is mainly developed according to my personal habits and is still under development. We are not responsible for any data loss that may occur during your use.**
 
 LLM Labeling UI is a project fork from [Chatbot UI](https://github.com/mckaywrigley/chatbot-ui), and made the following modifications to make it more suitable for large language model data labeling tasks.
 
