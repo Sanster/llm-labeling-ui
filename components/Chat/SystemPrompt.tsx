@@ -9,8 +9,6 @@ import {
 
 import { useTranslation } from 'next-i18next';
 
-import { DEFAULT_SYSTEM_PROMPT } from '@/utils/app/const';
-
 import { Conversation } from '@/types/chat';
 import { Prompt } from '@/types/prompt';
 
@@ -36,6 +34,7 @@ export const SystemPrompt: FC<Props> = ({
   const [promptInputValue, setPromptInputValue] = useState('');
   const [variables, setVariables] = useState<string[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const promptListRef = useRef<HTMLUListElement | null>(null);
@@ -147,7 +146,7 @@ export const SystemPrompt: FC<Props> = ({
         setActivePromptIndex((prevIndex) =>
           prevIndex < prompts.length - 1 ? prevIndex + 1 : 0,
         );
-      } else if (e.key === 'Enter') {
+      } else if (e.key === 'Enter' && !isTyping) {
         e.preventDefault();
         handleInitModal();
       } else if (e.key === 'Escape') {
@@ -212,6 +211,8 @@ export const SystemPrompt: FC<Props> = ({
         rows={1}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onCompositionStart={() => setIsTyping(true)}
+        onCompositionEnd={() => setIsTyping(false)}
       />
 
       {showPromptList && filteredPrompts.length > 0 && (
