@@ -94,13 +94,13 @@ const Home = () => {
     error: conversationsError,
     refetch: refetchConversations,
   } = useQuery(
-    ['GetConversations', page, 20],
+    ['GetConversations', page, 15],
     ({ signal }) => {
       console.log(`fetch conversations ${page}`);
       return getConversations(
         {
           page: page,
-          pageSize: 20,
+          pageSize: 15,
         },
         signal,
       );
@@ -109,8 +109,9 @@ const Home = () => {
   );
 
   useEffect(() => {
-    let convs = conversationsData?.conversations?.map((c) => c.data);
+    var convs = conversationsData?.conversations?.map((c) => c.data);
     if (convs) {
+      convs = convs.reverse();
       if (convs[convs.length - 1].id !== selectedConversation?.id) {
         dispatch({
           field: 'selectedConversation',
@@ -243,7 +244,6 @@ const Home = () => {
       return;
     }
 
-    dispatch({ field: 'page', value: totalPages - 1 });
     refetchConversations();
 
     // const updatedConversations = [...conversations, newConversation];

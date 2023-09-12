@@ -105,7 +105,12 @@ class DBManager:
         limit = page_size
         offset = page * page_size
         with Session(self.engine) as session:
-            statement = sqlmodel.select(Conversation).offset(offset).limit(limit)
+            statement = (
+                sqlmodel.select(Conversation)
+                .order_by(Conversation.created_at.desc())
+                .offset(offset)
+                .limit(limit)
+            )
             convs = session.exec(statement).all()
             return convs
 
