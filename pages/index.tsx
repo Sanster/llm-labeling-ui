@@ -107,7 +107,7 @@ const Home = () => {
         signal,
       );
     },
-    { enabled: true, refetchOnMount: false },
+    { enabled: true, refetchOnMount: false, refetchOnWindowFocus: false },
   );
 
   useEffect(() => {
