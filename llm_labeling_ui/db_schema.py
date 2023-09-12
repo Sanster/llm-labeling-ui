@@ -147,17 +147,3 @@ class DBManager:
             conv = results.one()[0]
             session.delete(conv)
             session.commit()
-
-
-if __name__ == "__main__":
-    sqlite_file_name = "/Users/cwq/code/github/openchat/dataset/sharegpt_clean_tr_en_zh_other_lang_chatbot_ui_history.sqlite"
-    sqlite_url = f"sqlite:///{sqlite_file_name}"
-
-    db = DBManager(db_path=sqlite_file_name)
-    print(db.count_conversations())
-
-    i = str(uuid4())
-    # print(i)
-    i = "e0a87017-b70a-476a-a5ad-a74d98608074"
-    conv = Conversation(id=i, data={"id": i, "name": "test11xx11"})
-    db.update_conversation(conv)
