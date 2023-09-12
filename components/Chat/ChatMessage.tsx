@@ -1,11 +1,4 @@
-import {
-  IconCheck,
-  IconCopy,
-  IconEdit,
-  IconRobot,
-  IconTrash,
-  IconUser,
-} from '@tabler/icons-react';
+import { IconEdit, IconRobot, IconUser } from '@tabler/icons-react';
 import { FC, memo, useContext, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -20,6 +13,7 @@ import { Conversation, Message } from '@/types/chat';
 
 import { CodeBlock } from '../Markdown/CodeBlock';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
+import { DeleteMessage } from './DeleteChatMessage';
 
 import rehypeMathjax from 'rehype-mathjax';
 import remarkGfm from 'remark-gfm';
@@ -327,12 +321,8 @@ export const ChatMessage: FC<Props> = memo(
                   >
                     <IconEdit size={20} />
                   </button>
-                  <button
-                    className="invisible group-hover:visible focus:visible text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                    onClick={handleDeleteMessage}
-                  >
-                    <IconTrash size={20} />
-                  </button>
+
+                  <DeleteMessage onDeleteMessage={handleDeleteMessage} />
                 </div>
               )}
             </div>
