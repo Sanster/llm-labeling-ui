@@ -1,5 +1,6 @@
 import math
 import os
+from functools import lru_cache
 from typing import List
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
@@ -192,10 +193,14 @@ class Api:
         return "ok", 200
 
     def count_tokens(self, req: CountTokensRequest) -> CountTokensResponse:
-        if self.tokenizer is None:
-            count = 0
-        else:
-            count = len(self.tokenizer(req.text)["input_ids"])
+        @lru_cache(maxsize=512)
+        def cached_count_tokens(text: str) -> int:
+            if self.tokenizer is None:
+                return 0
+            else:
+                return len(self.tokenizer(text)["input_ids"])
+
+        count = cached_count_tokens(req.text)
         return CountTokensResponse(count=count)
 
     def add_api_route(self, path: str, endpoint, **kwargs):
