@@ -1,0 +1,53 @@
+{
+  "version": 4,
+  "history": [
+    {
+      "id": "743e77d5-75fd-4095-8854-16f36ca05535",
+      "name": "你好",
+      "messages": [
+        {
+          "role": "user",
+          "content": "你好"
+        },
+        {
+          "role": "assistant",
+          "content": "你好！有什么我可以帮助你的吗？"
+        }
+      ],
+      "model": {
+        "id": "gpt-3.5-turbo",
+        "name": "GPT-3.5",
+        "maxLength": 12000,
+        "tokenLimit": 4000
+      },
+      "prompt": "You are ChatGPT, a large language model trained by OpenAI. Follow the user's instructions carefully. Respond using markdown.",
+      "temperature": 1,
+      "folderId": null
+    },
+    {
+      "id": "e448a779-20c0-4154-925e-8b8a9ad69584",
+      "name": "who are you",
+      "messages": [
+        {
+          "role": "user",
+          "content": "who are you"
+        },
+        {
+          "role": "assistant",
+          "content": "I am ChatGPT, a language model developed by OpenAI. I'm here to assist you with any questions or tasks you have. How can I help you today?"
+        }
+      ],
+      "model": {
+        "id": "gpt-3.5-turbo",
+        "name": "GPT-3.5",
+        "maxLength": 12000,
+        "tokenLimit": 4000
+      },
+      "prompt": "You are ChatGPT, a large language model trained by OpenAI. Follow the user's instructions carefully. Respond using markdown.",
+      "temperature": 1,
+      "folderId": null
+    }
+  ],
+  "folders": [],
+  "prompts": []
+}

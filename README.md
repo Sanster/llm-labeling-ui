@@ -1,6 +1,6 @@
 # LLM Labeling UI
 
-![LLM Labeling UI](./images/screenshot.png)
+![LLM Labeling UI](assets/screenshot.png)
 
 ## About
 
@@ -38,7 +38,7 @@ export OPENAI_ORGANIZATION=YOUR_ORG
 llm-labeling-ui start --history-file chatbot-ui-v4-format-history.json --tokenizer meta-llama/Llama-2-7b
 ```
 
-- Before the service starts, a `chatbot-ui-v4-format-history.sqlite` file will be created based on `chatbot-ui-v4-format-history.json`. All your modifications on the page will be saved into the sqlite file. If the `chatbot-ui-v4-format-history.sqlite` file already exists, it will be automatically read.
+- `--history-file`: Chatbot-UI-v4 format, here is an [example](./assets/chatbot_ui_example_history_file.json). Before the service starts, a `chatbot-ui-v4-format-history.sqlite` file will be created based on `chatbot-ui-v4-format-history.json`. All your modifications on the page will be saved into the sqlite file. If the `chatbot-ui-v4-format-history.sqlite` file already exists, it will be automatically read.
 - `--tokenizer` is used to display how many tokens the current conversation on the webpage contains. Please note that this is not the token consumed by calling the openai api.
 
 **3. Export data from sqlite**
