@@ -132,7 +132,8 @@ class Api:
         if req.prompt:
             messages.insert(0, ChatMessage(role="system", content=req.prompt))
 
-        openai.api_key = req.key
+        if req.key:
+            openai.api_key = req.key
 
         def gen():
             try:
