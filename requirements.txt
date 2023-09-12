@@ -6,3 +6,5 @@ pydantic
 rich
 sqlmodel
 transformers
+gunicorn
+uvicorn
