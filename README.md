@@ -14,7 +14,7 @@ LLM Labeling UI is a project fork from [Chatbot UI](https://github.com/mckaywrig
   - You can view data in pages
   - You can directly modify/delete model's response results
   - A confirmation button has been added before deleting the conversation message
-  - Display the number of messages in the current dialogue, token length
+  - Display the number of messages and token length in the current dialogue
   - You can modify the system prompt during the dialogue
 
 ## Quick Start
