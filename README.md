@@ -1,6 +1,6 @@
 # LLM Labeling UI
 
-![LLM Labeling UI](./public/screenshot.png)
+![LLM Labeling UI](./images/screenshot.png)
 
 ## About
 
