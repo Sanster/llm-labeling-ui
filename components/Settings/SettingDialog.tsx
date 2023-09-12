@@ -1,3 +1,4 @@
+import { IconBrush } from '@tabler/icons-react';
 import { FC, useContext, useEffect, useReducer, useRef } from 'react';
 
 import { useTranslation } from 'next-i18next';
@@ -8,6 +9,10 @@ import { getSettings, saveSettings } from '@/utils/app/settings';
 import HomeContext from '@/utils/home.context';
 
 import { Settings } from '@/types/settings';
+
+import ChatbarContext from '../Chatbar/Chatbar.context';
+import { Key } from './Key';
+import { Org } from './Org';
 
 interface Props {
   open: boolean;
@@ -20,8 +25,14 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
   const { state, dispatch } = useCreateReducer<Settings>({
     initialState: settings,
   });
-  const { dispatch: homeDispatch } = useContext(HomeContext);
+
   const modalRef = useRef<HTMLDivElement>(null);
+  const {
+    state: { apiKey, apiOrg },
+    dispatch: homeDispatch,
+  } = useContext(HomeContext);
+
+  const { handleApiKeyChange, handleApiOrgChange } = useContext(ChatbarContext);
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -71,30 +82,40 @@ export const SettingDialog: FC<Props> = ({ open, onClose }) => {
               {t('Settings')}
             </div>
 
+            <Key apiKey={apiKey} onApiKeyChange={handleApiKeyChange} />
+            <Org apiOrg={apiOrg} onApiOrgChange={handleApiOrgChange} />
+
+            {/* 
             <div className="text-sm font-bold mb-2 text-black dark:text-neutral-200">
               {t('Theme')}
-            </div>
+            </div> */}
 
-            <select
-              className="w-full cursor-pointer bg-transparent p-2 text-neutral-700 dark:text-neutral-200"
-              value={state.theme}
-              onChange={(event) =>
-                dispatch({ field: 'theme', value: event.target.value })
-              }
-            >
-              <option value="dark">{t('Dark mode')}</option>
-              <option value="light">{t('Light mode')}</option>
-            </select>
+            <div className="flex cursor-pointer px-3 py-1 rounded-md hover:bg-gray-500/10 items-center justify-center">
+              <div className="text-black dark:text-neutral-200">
+                {<IconBrush size={18} />}
+              </div>
+              <select
+                className="w-full cursor-pointer bg-transparent p-2 text-neutral-700 dark:text-neutral-200"
+                value={state.theme}
+                onChange={(event) => {
+                  dispatch({ field: 'theme', value: event.target.value });
+                  homeDispatch({ field: 'lightMode', value: state.theme });
+                  saveSettings(state);
+                }}
+              >
+                <option value="dark">{t('Light mode')}</option>
+                <option value="light">{t('Dark mode')}</option>
+              </select>
+            </div>
 
             <button
               type="button"
               className="w-full px-4 py-2 mt-6 border rounded-lg shadow border-neutral-500 text-neutral-900 hover:bg-neutral-100 focus:outline-none dark:border-neutral-800 dark:border-opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-300"
               onClick={() => {
-                handleSave();
                 onClose();
               }}
             >
-              {t('Save')}
+              {t('Close')}
             </button>
           </div>
         </div>

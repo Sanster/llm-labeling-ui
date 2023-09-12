@@ -6,6 +6,7 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 import openai
+from loguru import logger
 
 from db_schema import DBManager, Folder, PromptTemp, Conversation as DBConversation
 from schema import (
@@ -115,7 +116,9 @@ class Api:
         return FileResponse(os.path.join(web_app_dir, "index.html"))
 
     def models(self, req: ModelsRequest) -> List[dict]:
-        all_models = openai.Model.list(req.key)
+        api_key = req.key if req.key else os.environ.get("OPENAI_API_KEY")
+        api_org = req.org if req.org else os.environ.get("OPENAI_ORGANIZATION")
+        all_models = openai.Model.list(api_key, organization=api_org)
         res = []
         for it in all_models.data:
             if it.id in OpenAIModelID:
@@ -134,6 +137,13 @@ class Api:
 
         if req.key:
             openai.api_key = req.key
+        else:
+            openai.api_key = os.environ.get("OPENAI_API_KEY")
+
+        if req.org:
+            openai.organization = req.org
+        else:
+            openai.organization = os.environ.get("OPENAI_ORGANIZATION")
 
         def gen():
             try:
@@ -145,7 +155,7 @@ class Api:
                     stream=True,
                 )
             except Exception as e:
-                print("Error in creating campaigns from openAI:", str(e))
+                logger.error("Error in creating campaigns from openAI:", str(e))
                 raise HTTPException(503, error503)
 
             try:
@@ -154,7 +164,7 @@ class Api:
                     yield current_content
 
             except Exception as e:
-                print("OpenAI Response (Streaming) Error: " + str(e))
+                logger.error("OpenAI Response (Streaming) Error: " + str(e))
                 raise HTTPException(503, error503)
 
         return StreamingResponse(content=gen(), media_type="text/event-stream")

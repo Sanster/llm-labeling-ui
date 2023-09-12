@@ -57,6 +57,7 @@ const Home = () => {
   const {
     state: {
       apiKey,
+      apiOrg,
       lightMode,
       folders,
       conversations,
@@ -71,13 +72,14 @@ const Home = () => {
   const stopConversationRef = useRef<boolean>(false);
 
   const { data, error, refetch } = useQuery(
-    ['GetModels', apiKey, serverSideApiKeyIsSet],
+    ['GetModels', apiKey, apiOrg, serverSideApiKeyIsSet],
     ({ signal }) => {
       if (!apiKey && !serverSideApiKeyIsSet) return null;
 
       return getModels(
         {
           key: apiKey,
+          org: apiOrg,
         },
         signal,
       );

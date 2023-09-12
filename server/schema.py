@@ -15,6 +15,7 @@ OpenAIModelID = {
 
 class ModelsRequest(BaseModel):
     key: str
+    org: str
 
 
 class ChatMessage(BaseModel):
@@ -33,6 +34,7 @@ class ChatRequest(BaseModel):
     model: OpenAIModel
     messages: List[ChatMessage]
     key: str
+    org: str
     prompt: str = ""
     temperature: float = 1.0
 

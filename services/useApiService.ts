@@ -6,6 +6,7 @@ import { Conversation } from '@/types/chat';
 
 export interface GetModelsRequestProps {
   key: string;
+  org: string;
 }
 
 export interface GetConversationsRequestProps {
@@ -40,7 +41,7 @@ const useApiService = () => {
   const getModels = useCallback(
     (params: GetModelsRequestProps, signal?: AbortSignal) => {
       return fetchService.post<GetModelsRequestProps>(`/api/models`, {
-        body: { key: params.key },
+        body: { key: params.key, org: params.org },
         headers: {
           'Content-Type': 'application/json',
         },

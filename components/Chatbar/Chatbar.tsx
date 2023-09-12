@@ -58,6 +58,15 @@ export const Chatbar = () => {
     [homeDispatch],
   );
 
+  const handleApiOrgChange = useCallback(
+    (apiOrg: string) => {
+      homeDispatch({ field: 'apiOrg', value: apiOrg });
+
+      localStorage.setItem('apiOrg', apiOrg);
+    },
+    [homeDispatch],
+  );
+
   const handlePluginKeyChange = (pluginKey: PluginKey) => {
     if (pluginKeys.some((key) => key.pluginId === pluginKey.pluginId)) {
       const updatedPluginKeys = pluginKeys.map((key) => {
@@ -185,6 +194,7 @@ export const Chatbar = () => {
         handlePluginKeyChange,
         handleClearPluginKey,
         handleApiKeyChange,
+        handleApiOrgChange,
       }}
     >
       <Sidebar<Conversation>

@@ -27,6 +27,7 @@ import { throttle } from '@/utils/data/throttle';
 import HomeContext from '@/utils/home.context';
 
 import { ChatBody, Conversation, Message } from '@/types/chat';
+import { OpenAIModelID, OpenAIModels } from '@/types/openai';
 import { Plugin } from '@/types/plugin';
 
 import Spinner from '../Spinner';
@@ -37,6 +38,8 @@ import { MemoizedChatMessage } from './MemoizedChatMessage';
 import { ModelSelect } from './ModelSelect';
 import { SystemPrompt } from './SystemPrompt';
 import { TemperatureSlider } from './Temperature';
+
+import { useDebounce } from '@uidotdev/usehooks';
 
 interface Props {
   stopConversationRef: MutableRefObject<boolean>;
@@ -51,6 +54,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       conversations,
       models,
       apiKey,
+      apiOrg,
       pluginKeys,
       serverSideApiKeyIsSet,
       messageIsStreaming,
@@ -64,17 +68,20 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
 
   const fetchService = useFetch();
   const { getTokenCount } = useApiService();
+  const debouncedSelectedConversation = useDebounce(selectedConversation, 300);
 
   const {
     data: tokenData,
     error: tokenError,
     refetch: tokenRefetch,
   } = useQuery(
-    ['GetTokenCount', selectedConversation],
+    ['GetTokenCount', debouncedSelectedConversation],
     ({ signal }) => {
       let text = '';
-      text += selectedConversation ? selectedConversation.prompt : '';
-      selectedConversation?.messages.forEach((message) => {
+      text += debouncedSelectedConversation
+        ? debouncedSelectedConversation.prompt
+        : '';
+      debouncedSelectedConversation?.messages.forEach((message) => {
         text += message.content;
       });
       return getTokenCount(
@@ -172,9 +179,10 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
       homeDispatch({ field: 'loading', value: true });
       homeDispatch({ field: 'messageIsStreaming', value: true });
       const chatBody: ChatBody = {
-        model: updatedConversation.model,
+        model: OpenAIModels[updatedConversation.model.id as OpenAIModelID],
         messages: updatedConversation.messages,
         key: apiKey,
+        org: apiOrg,
         prompt: updatedConversation.prompt,
         temperature: updatedConversation.temperature,
       };
