@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
@@ -35,9 +37,9 @@ import { Prompt } from '@/types/prompt';
 
 import { Chat } from '@/components/Chat/Chat';
 import { Chatbar } from '@/components/Chatbar/Chatbar';
-import { Navbar } from '@/components/Mobile/Navbar';
-import Promptbar from '@/components/Promptbar';
 
+// import { Navbar } from '@/components/Mobile/Navbar';
+// import Promptbar from '@/components/Promptbar';
 import { v4 as uuidv4 } from 'uuid';
 
 const Home = () => {
@@ -415,6 +417,13 @@ const Home = () => {
       localStorage.removeItem('apiKey');
     } else if (apiKey) {
       dispatch({ field: 'apiKey', value: apiKey });
+    }
+
+    const apiOrg = localStorage.getItem('apiOrg');
+    if (apiOrg) {
+      dispatch({ field: 'apiOrg', value: apiOrg });
+    } else {
+      dispatch({ field: 'apiOrg', value: '' });
     }
 
     const pluginKeys = localStorage.getItem('pluginKeys');
