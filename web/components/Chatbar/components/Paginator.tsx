@@ -102,6 +102,7 @@ export const Paginator = () => {
         value: totalPages - 1,
       });
     }
+    homeDispatch({ field: 'selectedConversationPageIndex', value: 0 });
   };
 
   const handleNextClick = () => {
@@ -116,6 +117,7 @@ export const Paginator = () => {
         value: 0,
       });
     }
+    homeDispatch({ field: 'selectedConversationPageIndex', value: 0 });
   };
 
   const handleChangePage = (page: number) => {
@@ -129,6 +131,7 @@ export const Paginator = () => {
       field: 'page',
       value: page,
     });
+    homeDispatch({ field: 'selectedConversationPageIndex', value: 0 });
   };
 
   return (
