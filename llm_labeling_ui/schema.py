@@ -92,6 +92,7 @@ class Config(BaseModel):
 class GetConversionsRequest(BaseModel):
     page: int = 0
     pageSize: int = 50
+    searchTerm: str = ""
 
 
 class GetConversionsResponse(BaseModel):

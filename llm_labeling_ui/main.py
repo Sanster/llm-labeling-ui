@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import List
 
 import typer
 from gunicorn.app.base import BaseApplication
@@ -100,7 +101,7 @@ def start(
     StandaloneApplication(app_factory(), options, config, db, tokenizer).run()
 
 
-@typer_app.command()
+@typer_app.command(help="Export db to chatbot-ui history file")
 def export(
     db_path: Path = typer.Option(None, exists=True, dir_okay=False),
     save_path: Path = typer.Option(

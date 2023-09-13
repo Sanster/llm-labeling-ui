@@ -23,9 +23,13 @@ import ChatbarContext from '@/components/Chatbar/Chatbar.context';
 
 interface Props {
   conversation: Conversation;
+  conversationPageIndex: number;
 }
 
-export const ConversationComponent = ({ conversation }: Props) => {
+export const ConversationComponent = ({
+  conversation,
+  conversationPageIndex,
+}: Props) => {
   const {
     state: { selectedConversation, messageIsStreaming },
     handleSelectConversation,
@@ -123,7 +127,9 @@ export const ConversationComponent = ({ conversation }: Props) => {
               ? 'bg-[#343541]/90'
               : ''
           }`}
-          onClick={() => handleSelectConversation(conversation)}
+          onClick={() =>
+            handleSelectConversation(conversation, conversationPageIndex)
+          }
           disabled={messageIsStreaming}
           draggable="true"
           onDragStart={(e) => handleDragStart(e, conversation)}

@@ -8,7 +8,7 @@ import sqlmodel
 from loguru import logger
 from rich.progress import track
 from sqlalchemy import Column, select
-from sqlmodel import SQLModel, Field, create_engine, Session, JSON
+from sqlmodel import SQLModel, Field, create_engine, Session, JSON, col
 
 
 class TimestampModel(SQLModel):
@@ -104,7 +104,9 @@ class DBManager:
             prompts = session.exec(statement).all()
             return prompts
 
-    def get_conversations(self, page: int, page_size: int = 50) -> List[Conversation]:
+    def get_conversations(
+        self, page: int, page_size: int = 50, search_term: str = ""
+    ) -> List[Conversation]:
         limit = page_size
         offset = page * page_size
         with Session(self.engine) as session:
@@ -114,12 +116,20 @@ class DBManager:
                 .offset(offset)
                 .limit(limit)
             )
+            if search_term:
+                statement = statement.where(
+                    col(Conversation.data).contains(search_term)
+                )
             convs = session.exec(statement).all()
             return convs
 
-    def count_conversations(self) -> int:
+    def count_conversations(self, search_term: str = "") -> int:
         with Session(self.engine) as session:
             statement = select(Conversation.id)
+            if search_term:
+                statement = statement.where(
+                    col(Conversation.data).contains(search_term)
+                )
             convs = session.exec(statement).all()
             return len(convs)
 

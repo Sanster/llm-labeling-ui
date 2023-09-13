@@ -182,11 +182,11 @@ class Api:
         return self.db.get_prompt_temps()
 
     def get_conversations(self, req: GetConversionsRequest) -> GetConversionsResponse:
-        conversions_count = self.db.count_conversations()
+        conversions_count = self.db.count_conversations(req.searchTerm)
         total_pages = math.ceil(conversions_count / req.pageSize)
         return GetConversionsResponse(
             conversations=self.db.get_conversations(
-                page=req.page, page_size=req.pageSize
+                page=req.page, page_size=req.pageSize, search_term=req.searchTerm
             ),
             page=req.page,
             totalPages=total_pages,

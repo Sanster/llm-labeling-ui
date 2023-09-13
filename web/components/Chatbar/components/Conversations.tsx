@@ -14,7 +14,11 @@ export const Conversations = ({ conversations }: Props) => {
         .slice()
         .reverse()
         .map((conversation, index) => (
-          <ConversationComponent key={index} conversation={conversation} />
+          <ConversationComponent
+            key={index}
+            conversation={conversation}
+            conversationPageIndex={index}
+          />
         ))}
     </div>
   );

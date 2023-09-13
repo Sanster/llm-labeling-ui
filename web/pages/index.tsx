@@ -62,8 +62,10 @@ const Home = () => {
       folders,
       conversations,
       selectedConversation,
+      selectedConversationPageIndex,
       prompts,
       page,
+      searchTerm,
       totalPages,
     },
     dispatch,
@@ -96,13 +98,14 @@ const Home = () => {
     error: conversationsError,
     refetch: refetchConversations,
   } = useQuery(
-    ['GetConversations', page, 15],
+    ['GetConversations', page, searchTerm, 15],
     ({ signal }) => {
-      console.log(`fetch conversations ${page}`);
+      console.log(`fetch conversations ${page}, ${searchTerm}`);
       return getConversations(
         {
           page: page,
           pageSize: 15,
+          searchTerm: searchTerm,
         },
         signal,
       );
@@ -114,11 +117,29 @@ const Home = () => {
     var convs = conversationsData?.conversations?.map((c) => c.data);
     if (convs) {
       convs = convs.reverse();
-      if (convs[convs.length - 1].id !== selectedConversation?.id) {
+      // 正确设置 selectedConversation，要考虑删除、创建的情况
+      if (convs.length === 0) {
         dispatch({
           field: 'selectedConversation',
-          value: convs[convs.length - 1],
+          value: undefined,
         });
+      } else {
+        let convPageIndex: number =
+          selectedConversationPageIndex === undefined
+            ? convs.length - 1
+            : convs.length - selectedConversationPageIndex - 1;
+        if (convPageIndex < 0) {
+          convPageIndex = 0;
+        }
+        if (convPageIndex >= convs.length) {
+          convPageIndex = convs.length - 1;
+        }
+        if (convs[convPageIndex].id !== selectedConversation?.id) {
+          dispatch({
+            field: 'selectedConversation',
+            value: convs[convPageIndex],
+          });
+        }
       }
       dispatch({ field: 'conversations', value: convs });
       dispatch({ field: 'totalPages', value: conversationsData?.totalPages });
@@ -136,10 +157,17 @@ const Home = () => {
 
   // FETCH MODELS ----------------------------------------------
 
-  const handleSelectConversation = (conversation: Conversation) => {
+  const handleSelectConversation = (
+    conversation: Conversation,
+    conversationPageIndex: number,
+  ) => {
     dispatch({
       field: 'selectedConversation',
       value: conversation,
+    });
+    dispatch({
+      field: 'selectedConversationPageIndex',
+      value: conversationPageIndex,
     });
 
     saveConversation(conversation);
@@ -247,6 +275,7 @@ const Home = () => {
     }
 
     dispatch({ field: 'page', value: 0 });
+    dispatch({ field: 'selectedConversationPageIndex', value: 0 });
     refetchConversations();
 
     // const updatedConversations = [...conversations, newConversation];
@@ -488,28 +517,19 @@ const Home = () => {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      {selectedConversation && (
-        <main
-          className={`flex h-screen w-screen flex-col text-sm text-white dark:text-white ${lightMode}`}
-        >
-          <div className="fixed top-0 w-full sm:hidden">
-            <Navbar
-              selectedConversation={selectedConversation}
-              onNewConversation={handleNewConversation}
-            />
+      <main
+        className={`flex h-screen w-screen flex-col text-sm text-white dark:text-white ${lightMode}`}
+      >
+        <div className="flex h-full w-full pt-[48px] sm:pt-0">
+          <Chatbar />
+
+          <div className="flex flex-1">
+            <Chat stopConversationRef={stopConversationRef} />
           </div>
 
-          <div className="flex h-full w-full pt-[48px] sm:pt-0">
-            <Chatbar />
-
-            <div className="flex flex-1">
-              <Chat stopConversationRef={stopConversationRef} />
-            </div>
-
-            {/* <Promptbar /> */}
-          </div>
-        </main>
-      )}
+          {/* <Promptbar /> */}
+        </div>
+      </main>
     </HomeContext.Provider>
   );
 };

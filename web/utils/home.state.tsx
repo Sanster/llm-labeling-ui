@@ -17,6 +17,7 @@ export interface HomeInitialState {
   folders: FolderInterface[];
   conversations: Conversation[];
   selectedConversation: Conversation | undefined;
+  selectedConversationPageIndex: number | undefined;
   currentMessage: Message | undefined;
   prompts: Prompt[];
   temperature: number;
@@ -45,6 +46,7 @@ export const initialState: HomeInitialState = {
   folders: [],
   conversations: [],
   selectedConversation: undefined,
+  selectedConversationPageIndex: undefined,
   currentMessage: undefined,
   prompts: [],
   temperature: 1,

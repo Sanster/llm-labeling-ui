@@ -79,7 +79,7 @@ export const PageInput: FC<Props> = ({
       className="ml-2 cursor-pointer hover:opacity-50"
       onClick={() => setIsChanging(true)}
     >
-      {page} / {totalPages} ({totalConversations})
+      {totalPages === 0 ? 0 : `${page} / ${totalPages} (${totalConversations})`}
     </button>
   );
 };

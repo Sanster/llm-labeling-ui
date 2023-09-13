@@ -80,11 +80,11 @@ const Sidebar = <T,>({
             <IconFolderPlus size={16} />
           </button> */}
         </div>
-        {/* <Search
+        <Search
           placeholder={t('Search...') || ''}
           searchTerm={searchTerm}
           onSearch={handleSearchTerm}
-        /> */}
+        />
 
         {paginatorComponent}
 

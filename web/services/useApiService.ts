@@ -12,6 +12,7 @@ export interface GetModelsRequestProps {
 export interface GetConversationsRequestProps {
   page: number;
   pageSize: number;
+  searchTerm: string;
 }
 
 export interface GetTokenCountRequestProps {
@@ -56,7 +57,7 @@ const useApiService = () => {
       return fetchService.post<GetConversationsResponseProps>(
         `/api/conversations`,
         {
-          body: { page: params.page, pageSize: params.pageSize },
+          body: params,
           headers: {
             'Content-Type': 'application/json',
           },

@@ -45,7 +45,7 @@ export const Chatbar = () => {
   } = useContext(HomeContext);
 
   const {
-    state: { searchTerm, filteredConversations },
+    state: { searchTerm },
     dispatch: chatDispatch,
   } = chatBarContextValue;
 
@@ -163,26 +163,6 @@ export const Chatbar = () => {
     }
   };
 
-  useEffect(() => {
-    if (searchTerm) {
-      chatDispatch({
-        field: 'filteredConversations',
-        value: conversations.filter((conversation) => {
-          const searchable =
-            conversation.name.toLocaleLowerCase() +
-            ' ' +
-            conversation.messages.map((message) => message.content).join(' ');
-          return searchable.toLowerCase().includes(searchTerm.toLowerCase());
-        }),
-      });
-    } else {
-      chatDispatch({
-        field: 'filteredConversations',
-        value: conversations,
-      });
-    }
-  }, [searchTerm, conversations]);
-
   return (
     <ChatbarContext.Provider
       value={{
@@ -201,14 +181,15 @@ export const Chatbar = () => {
         side={'left'}
         isOpen={showChatbar}
         addItemButtonTitle={t('New chat')}
-        itemComponent={<Conversations conversations={filteredConversations} />}
+        itemComponent={<Conversations conversations={conversations} />}
         folderComponent={<ChatFolders searchTerm={searchTerm} />}
         paginatorComponent={<Paginator />}
-        items={filteredConversations}
+        items={conversations}
         searchTerm={searchTerm}
-        handleSearchTerm={(searchTerm: string) =>
-          chatDispatch({ field: 'searchTerm', value: searchTerm })
-        }
+        handleSearchTerm={(searchTerm: string) => {
+          homeDispatch({ field: 'searchTerm', value: searchTerm });
+          homeDispatch({ field: 'page', value: 0 });
+        }}
         toggleOpen={handleToggleChatbar}
         handleCreateItem={handleNewConversation}
         handleCreateFolder={() => handleCreateFolder(t('New folder'), 'chat')}
