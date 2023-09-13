@@ -1,5 +1,14 @@
-# LLM Labeling UI
+<h1 align="center">Lama Cleaner</h1>
 
+<p align="center">
+ <a href="https://github.com/Sanster/llm-labeling-ui">
+    <img alt="total download" src="https://pepy.tech/badge/llm-labeling-ui" />
+  </a>
+  <a href="https://pypi.org/project/llm-labeling-ui/">
+    <img alt="version" src="https://img.shields.io/pypi/v/llm-labeling-ui" />
+  </a>
+</p>
+  
 ![LLM Labeling UI](assets/screenshot.png)
 
 ## About
