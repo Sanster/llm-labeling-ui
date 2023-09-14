@@ -2,11 +2,13 @@ import os
 from datetime import datetime
 from pathlib import Path
 from typing import List
+from rich import print
 
 import typer
 from gunicorn.app.base import BaseApplication
 from loguru import logger
 from typer import Typer
+from rich.progress import track
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -122,7 +124,7 @@ def export(
 
 
 @typer_app.command(help="Remove conversation which is prefix of another conversation")
-def remove_prefix(
+def remove_prefix_conversation(
     db_path: Path = typer.Option(None, exists=True, dir_okay=False),
     run: bool = typer.Option(False, help="run the command"),
 ):
@@ -131,7 +133,6 @@ def remove_prefix(
     logger.info(f"Total conversations: {len(conversations)}")
 
     import pygtrie
-    from rich.progress import track
 
     trie = pygtrie.CharTrie()
 
@@ -149,6 +150,32 @@ def remove_prefix(
     if run:
         for it in track(prefix_conversation_to_remove, description="removing"):
             db.delete_conversation(it.id)
+
+
+@typer_app.command(help="Delete string in conversation")
+def delete_string(
+    db_path: Path = typer.Option(None, exists=True, dir_okay=False),
+    string: str = typer.Option(None, help="string to delete"),
+    run: bool = typer.Option(False, help="run the command"),
+):
+    db = DBManager(db_path)
+    conversations = db.all_conversations(search_term=string)
+    logger.info("Preview first 5 conversations:")
+    for it in conversations[:5]:
+        print("-" * 100)
+        print(it)
+
+    logger.info(
+        f"Total conversations {db.count_conversations()}, contains [{string}]: {len(conversations)}"
+    )
+
+    if run:
+        for it in track(conversations, description="removing"):
+            it.data["prompt"] = it.data["prompt"].replace(string, "")
+            for m in it.data["messages"]:
+                m["content"] = m["content"].replace(string, "")
+            it.updated_at = datetime.utcnow()
+            db.update_conversation(it)
 
 
 if __name__ == "__main__":

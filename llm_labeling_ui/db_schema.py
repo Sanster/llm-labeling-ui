@@ -123,8 +123,8 @@ class DBManager:
             convs = session.exec(statement).all()
             return convs
 
-    def all_conversations(self) -> List[Conversation]:
-        return self.get_conversations(0, 1000000000)
+    def all_conversations(self, search_term: str = "") -> List[Conversation]:
+        return self.get_conversations(0, 1000000000, search_term=search_term)
 
     def count_conversations(self, search_term: str = "") -> int:
         with Session(self.engine) as session:
