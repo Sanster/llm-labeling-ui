@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from llm_labeling_ui.db_schema import DBManager
-from llm_labeling_ui.schema import Config
+from llm_labeling_ui.schema import Config, Conversation
 
 typer_app = Typer(add_completion=False, pretty_exceptions_show_locals=False)
 
@@ -65,18 +65,11 @@ def post_worker_init(worker):
 def start(
     host: str = typer.Option("0.0.0.0"),
     port: int = typer.Option(8000),
-    history_file: Path = typer.Option(None, dir_okay=False),
-    db_path: Path = typer.Option(None, dir_okay=False),
+    data: Path = typer.Option(
+        ..., exists=True, dir_okay=False, help="json or sqlite file"
+    ),
     tokenizer: str = typer.Option(None),
 ):
-    assert (
-        history_file is not None or db_path is not None
-    ), "one of history_file or db_path must be set"
-
-    assert not (
-        history_file is not None and db_path is not None
-    ), "only one of history_file or db_path can be set"
-
     config = Config(web_app_dir=web_app_dir)
     options = {
         "bind": f"{host}:{port}",
@@ -87,15 +80,19 @@ def start(
         "capture_output": True,
     }
 
-    db_path = history_file.with_suffix(".sqlite")
+    if data.suffix == ".json":
+        db_path = data.with_suffix(".sqlite")
+    elif data.suffix == ".sqlite":
+        db_path = data
+    else:
+        raise ValueError(f"unknown file type {data}")
+
     if not db_path.exists():
         logger.info(f"create db at {db_path}")
         db = DBManager(db_path)
-        db = db.create_from_json_file(history_file)
+        db = db.create_from_json_file(data)
     else:
-        logger.warning(
-            f"loading db from {db_path}, data may be different from {history_file}"
-        )
+        logger.warning(f"loading db from {db_path}, data may be different from {data}")
         db = DBManager(db_path)
 
     StandaloneApplication(app_factory(), options, config, db, tokenizer).run()
@@ -122,6 +119,36 @@ def export(
     logger.info(f"Dumping db to {save_path}")
     db = DBManager(db_path)
     db.export_to_json_file(save_path)
+
+
+@typer_app.command(help="Remove conversation which is prefix of another conversation")
+def remove_prefix(
+    db_path: Path = typer.Option(None, exists=True, dir_okay=False),
+    run: bool = typer.Option(False, help="run the command"),
+):
+    db = DBManager(db_path)
+    conversations = [Conversation(**it.data) for it in db.all_conversations()]
+    logger.info(f"Total conversations: {len(conversations)}")
+
+    import pygtrie
+    from rich.progress import track
+
+    trie = pygtrie.CharTrie()
+
+    prefix_conversation_to_remove = []
+    for it in track(conversations, description="building trie"):
+        trie[it.merged_text()] = True
+
+    for it in track(conversations, description="checking prefix"):
+        if trie.has_subtrie(it.merged_text()):
+            # 完全相等的 text 不会有 subtrie
+            prefix_conversation_to_remove.append(it)
+
+    logger.info(f"Found {len(prefix_conversation_to_remove)} prefix conversation")
+
+    if run:
+        for it in track(prefix_conversation_to_remove, description="removing"):
+            db.delete_conversation(it.id)
 
 
 if __name__ == "__main__":

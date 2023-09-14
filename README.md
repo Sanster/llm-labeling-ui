@@ -44,7 +44,7 @@ export OPENAI_ORGANIZATION=YOUR_ORG
 **2. Start Server**
 
 ```bash
-llm-labeling-ui start --history-file chatbot-ui-v4-format-history.json --tokenizer meta-llama/Llama-2-7b
+llm-labeling-ui start --data chatbot-ui-v4-format-history.json --tokenizer meta-llama/Llama-2-7b
 ```
 
 - `--history-file`: Chatbot-UI-v4 format, here is an [example](./assets/chatbot_ui_example_history_file.json). Before the service starts, a `chatbot-ui-v4-format-history.sqlite` file will be created based on `chatbot-ui-v4-format-history.json`. All your modifications on the page will be saved into the sqlite file. If the `chatbot-ui-v4-format-history.sqlite` file already exists, it will be automatically read.
@@ -56,4 +56,14 @@ llm-labeling-ui start --history-file chatbot-ui-v4-format-history.json --tokeniz
 llm-labeling-ui export --db-path chatbot-ui-v4-format-history.sqlite
 ```
 
-By default exported data will be generated in the same directory as `db_path``, and the file name will be added with a timestam.
+By default exported data will be generated in the same directory as `--db-path`, and the file name will be added with a timestam.
+
+## Other feature
+
+1. Remove conversation which is prefix of another conversation
+
+```bash
+llm-labeling-ui remove-prefix --db-path chatbot-ui-v4-format-history.sqlite
+```
+
+By default, this will not perform any operations on the database, it will only print out the number of data to be deleted. Adding the `--run` command can execute the deletion.

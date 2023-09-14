@@ -77,6 +77,9 @@ class Conversation(BaseModel):
     temperature: int = 1
     folderId: str = None
 
+    def merged_text(self) -> str:
+        return "".join([self.prompt] + [m.content for m in self.messages])
+
 
 class ChatBotUIHistory(BaseModel):
     version: int = 4
