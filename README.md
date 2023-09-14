@@ -1,4 +1,4 @@
-<h1 align="center">Lama Cleaner</h1>
+<h1 align="center">LLm Labeling UI</h1>
 
 <p align="center">
  <a href="https://github.com/Sanster/llm-labeling-ui">
