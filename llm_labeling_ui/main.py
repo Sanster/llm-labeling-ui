@@ -152,6 +152,36 @@ def remove_prefix_conversation(
             db.delete_conversation(it.id)
 
 
+@typer_app.command(help="Remove duplicate conversation only keep one of them")
+def remove_duplicate_conversation(
+    db_path: Path = typer.Option(None, exists=True, dir_okay=False),
+    run: bool = typer.Option(False, help="run the command"),
+):
+    db = DBManager(db_path)
+    conversations = [Conversation(**it.data) for it in db.all_conversations()]
+    logger.info(f"Total conversations: {len(conversations)}")
+
+    conversation_to_remove = []
+    merged_conversations = set()
+    for it in track(conversations, description="finding duplicate"):
+        merged_text = it.merged_text()
+        if merged_text in merged_conversations:
+            conversation_to_remove.append(it)
+        else:
+            merged_conversations.add(merged_text)
+
+    for it in conversation_to_remove[:5]:
+        print("=" * 100)
+        print(it)
+        print("=" * 100)
+
+    logger.info(f"Found {len(conversation_to_remove)} duplicate conversation")
+
+    if run:
+        for it in track(conversation_to_remove, description="removing duplicates"):
+            db.delete_conversation(it.id)
+
+
 @typer_app.command(help="Delete string in conversation")
 def delete_string(
     db_path: Path = typer.Option(None, exists=True, dir_okay=False),
@@ -170,7 +200,7 @@ def delete_string(
     )
 
     if run:
-        for it in track(conversations, description="removing"):
+        for it in track(conversations, description="delete string"):
             it.data["prompt"] = it.data["prompt"].replace(string, "")
             for m in it.data["messages"]:
                 m["content"] = m["content"].replace(string, "")
