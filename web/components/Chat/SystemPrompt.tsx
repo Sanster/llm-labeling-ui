@@ -50,10 +50,7 @@ export const SystemPrompt: FC<Props> = ({
   ) => {
     if (e.type === 'compositionstart' || e.type === 'compositionend') {
       // Handle CompositionEvent
-      const compositionEvent = e as React.CompositionEvent<HTMLTextAreaElement>;
-      if (compositionEvent.data.length > 0) {
-        onChangePrompt(value);
-      }
+      onChangePrompt(value);
     } else {
       // Handle ChangeEvent
       const changeEvent = e as React.ChangeEvent<HTMLTextAreaElement>;
@@ -62,7 +59,7 @@ export const SystemPrompt: FC<Props> = ({
       setValue(newValue);
       // updatePromptListVisibility(value);
 
-      if (newValue.length > 0 && !isTyping) {
+      if (!isTyping) {
         onChangePrompt(newValue);
       }
     }
