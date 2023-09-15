@@ -73,3 +73,10 @@ llm-labeling-ui remove-prefix-conversation --db-path chatbot-ui-v4-format-histor
 ```bash
 llm-labeling-ui delete-string --db-path chatbot-ui-v4-format-history.sqlite --string "some text"
 ```
+
+
+3. Remove duplicate conversations, only keep one
+
+```bash
+llm-labeling-ui remove-duplicate-conversation --db-path chatbot-ui-v4-format-history.sqlite
+```
