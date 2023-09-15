@@ -341,38 +341,6 @@ const Home = () => {
     }
 
     refetchConversations();
-
-    // const updatedConversations = conversations.filter(
-    //   (c) => c.id !== conversation.id,
-    // );
-
-    // dispatch({ field: 'conversations', value: updatedConversations });
-    // saveConversations(updatedConversations);
-
-    // if (updatedConversations.length > 0) {
-    //   dispatch({
-    //     field: 'selectedConversation',
-    //     value: updatedConversations[updatedConversations.length - 1],
-    //   });
-
-    //   saveConversation(updatedConversations[updatedConversations.length - 1]);
-    // } else {
-    //   defaultModelId &&
-    //     dispatch({
-    //       field: 'selectedConversation',
-    //       value: {
-    //         id: uuidv4(),
-    //         name: t('New Conversation'),
-    //         messages: [],
-    //         model: OpenAIModels[defaultModelId],
-    //         prompt: DEFAULT_SYSTEM_PROMPT,
-    //         temperature: DEFAULT_TEMPERATURE,
-    //         folderId: null,
-    //       },
-    //     });
-
-    //   localStorage.removeItem('selectedConversation');
-    // }
   };
 
   // EFFECTS  --------------------------------------------

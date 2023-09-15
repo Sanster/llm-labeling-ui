@@ -36,7 +36,17 @@ export const Chatbar = () => {
   });
 
   const {
-    state: { conversations, showChatbar, defaultModelId, folders, pluginKeys },
+    state: {
+      conversations,
+      showChatbar,
+      defaultModelId,
+      folders,
+      pluginKeys,
+      page,
+      pageBeforeSearch,
+      selectedConversationPageIndex,
+      selectedConversationPageIndexBeforeSearch,
+    },
     dispatch: homeDispatch,
     handleCreateFolder,
     handleNewConversation,
@@ -187,8 +197,30 @@ export const Chatbar = () => {
         items={conversations}
         searchTerm={searchTerm}
         handleSearchTerm={(searchTerm: string) => {
+          if (searchTerm && pageBeforeSearch === null) {
+            homeDispatch({ field: 'pageBeforeSearch', value: page });
+            homeDispatch({
+              field: 'selectedConversationPageIndexBeforeSearch',
+              value: selectedConversationPageIndex,
+            });
+            homeDispatch({
+              field: 'selectedConversationPageIndex',
+              value: 0,
+            });
+            homeDispatch({ field: 'page', value: 0 });
+          } else if (searchTerm === '' && pageBeforeSearch !== null) {
+            homeDispatch({ field: 'page', value: pageBeforeSearch });
+            homeDispatch({
+              field: 'selectedConversationPageIndex',
+              value: selectedConversationPageIndexBeforeSearch,
+            });
+            homeDispatch({ field: 'pageBeforeSearch', value: null });
+            homeDispatch({
+              field: 'selectedConversationPageIndexBeforeSearch',
+              value: null,
+            });
+          }
           homeDispatch({ field: 'searchTerm', value: searchTerm });
-          homeDispatch({ field: 'page', value: 0 });
         }}
         toggleOpen={handleToggleChatbar}
         handleCreateItem={handleNewConversation}

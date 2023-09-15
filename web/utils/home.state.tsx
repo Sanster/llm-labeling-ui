@@ -30,6 +30,8 @@ export interface HomeInitialState {
   serverSideApiKeyIsSet: boolean;
   serverSidePluginKeysSet: boolean;
   page: number;
+  pageBeforeSearch: number | null;
+  selectedConversationPageIndexBeforeSearch: number | null;
   totalPages: number;
   totalConversations: number;
 }
@@ -59,6 +61,8 @@ export const initialState: HomeInitialState = {
   serverSideApiKeyIsSet: false,
   serverSidePluginKeysSet: false,
   page: 0,
+  pageBeforeSearch: null,
+  selectedConversationPageIndexBeforeSearch: null,
   totalPages: 1,
   totalConversations: 0,
 };
