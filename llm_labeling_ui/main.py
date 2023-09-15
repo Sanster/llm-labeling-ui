@@ -150,6 +150,7 @@ def remove_prefix_conversation(
     if run:
         for it in track(prefix_conversation_to_remove, description="removing"):
             db.delete_conversation(it.id)
+        db.vacuum()
 
 
 @typer_app.command(help="Remove duplicate conversation only keep one of them")
@@ -180,6 +181,7 @@ def remove_duplicate_conversation(
     if run:
         for it in track(conversation_to_remove, description="removing duplicates"):
             db.delete_conversation(it.id)
+        db.vacuum()
 
 
 @typer_app.command(help="Delete string in conversation")
@@ -206,6 +208,7 @@ def delete_string(
                 m["content"] = m["content"].replace(string, "")
             it.updated_at = datetime.utcnow()
             db.update_conversation(it)
+        db.vacuum()
 
 
 if __name__ == "__main__":

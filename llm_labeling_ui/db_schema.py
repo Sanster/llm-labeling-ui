@@ -160,3 +160,7 @@ class DBManager:
             conv = results.one()[0]
             session.delete(conv)
             session.commit()
+
+    def vacuum(self):
+        with Session(self.engine) as session:
+            session.execute("VACUUM")
