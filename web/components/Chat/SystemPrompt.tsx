@@ -43,25 +43,28 @@ export const SystemPrompt: FC<Props> = ({
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
   );
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    const maxLength = conversation.model.maxLength;
+  const handleChange = (
+    e:
+      | React.ChangeEvent<HTMLTextAreaElement>
+      | React.CompositionEvent<HTMLTextAreaElement>,
+  ) => {
+    if (e.type === 'compositionstart' || e.type === 'compositionend') {
+      // Handle CompositionEvent
+      const compositionEvent = e as React.CompositionEvent<HTMLTextAreaElement>;
+      if (compositionEvent.data.length > 0) {
+        onChangePrompt(value);
+      }
+    } else {
+      // Handle ChangeEvent
+      const changeEvent = e as React.ChangeEvent<HTMLTextAreaElement>;
+      const newValue = changeEvent.target.value;
+      console.log(`handle change ${newValue}`);
+      setValue(newValue);
+      // updatePromptListVisibility(value);
 
-    if (value.length > maxLength) {
-      alert(
-        t(
-          `Prompt limit is {{maxLength}} characters. You have entered {{valueLength}} characters.`,
-          { maxLength, valueLength: value.length },
-        ),
-      );
-      return;
-    }
-
-    setValue(value);
-    updatePromptListVisibility(value);
-
-    if (value.length > 0) {
-      onChangePrompt(value);
+      if (newValue.length > 0 && !isTyping) {
+        onChangePrompt(newValue);
+      }
     }
   };
 
@@ -210,9 +213,12 @@ export const SystemPrompt: FC<Props> = ({
         value={t(value) || ''}
         rows={1}
         onChange={handleChange}
-        onKeyDown={handleKeyDown}
+        // onKeyDown={handleKeyDown}
         onCompositionStart={() => setIsTyping(true)}
-        onCompositionEnd={() => setIsTyping(false)}
+        onCompositionEnd={(e: React.CompositionEvent<HTMLTextAreaElement>) => {
+          setIsTyping(false);
+          handleChange(e);
+        }}
       />
 
       {showPromptList && filteredPrompts.length > 0 && (
