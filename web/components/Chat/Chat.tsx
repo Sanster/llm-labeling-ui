@@ -33,8 +33,7 @@ import { Plugin } from '@/types/plugin';
 import Spinner from '../Spinner';
 import { ChatInput } from './ChatInput';
 import { ChatLoader } from './ChatLoader';
-import { ErrorMessageDiv } from './ErrorMessageDiv';
-import { MemoizedChatMessage } from './MemoizedChatMessage';
+import { ChatMessage } from './ChatMessage';
 import { ModelSelect } from './ModelSelect';
 import { SystemPrompt } from './SystemPrompt';
 import { TemperatureSlider } from './Temperature';
@@ -526,14 +525,13 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             )}
 
             {selectedConversation?.messages.map((message, index) => (
-              <MemoizedChatMessage
+              <ChatMessage
                 key={index}
                 message={message}
                 messageIndex={index}
                 onEdit={(editedMessage, onlySave) => {
                   setCurrentMessage(editedMessage);
                   // discard edited message and the ones that come after then resend
-                  console.log(`onlySave: ${onlySave}`);
                   if (onlySave) {
                     handleSend(editedMessage, 0, null, index);
                   } else {
