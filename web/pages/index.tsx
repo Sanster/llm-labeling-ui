@@ -80,8 +80,6 @@ const Home = () => {
   const { data, error, refetch } = useQuery(
     ['GetModels', apiKey, apiOrg, serverSideApiKeyIsSet],
     ({ signal }) => {
-      if (!apiKey && !serverSideApiKeyIsSet) return null;
-
       return getModels(
         {
           key: apiKey,
