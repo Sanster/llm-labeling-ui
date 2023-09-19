@@ -35,6 +35,7 @@ import { FolderInterface, FolderType } from '@/types/folder';
 import { OpenAIModelID, OpenAIModels, fallbackModelID } from '@/types/openai';
 import { Prompt } from '@/types/prompt';
 
+import Actionbar from '@/components/Actionbar/Actionbar';
 import { Chat } from '@/components/Chat/Chat';
 import { Chatbar } from '@/components/Chatbar/Chatbar';
 import Promptbar from '@/components/Promptbar';
@@ -505,7 +506,7 @@ const Home = () => {
             <Chat stopConversationRef={stopConversationRef} />
           </div>
 
-          {/* <Promptbar /> */}
+          <Actionbar />
         </div>
       </main>
     </HomeContext.Provider>
