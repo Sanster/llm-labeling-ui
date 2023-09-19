@@ -5,6 +5,7 @@ import { useFetch } from '@/hooks/useFetch';
 
 import { updateConversation } from '@/utils/app/conversation';
 import HomeContext from '@/utils/home.context';
+import { replaceAll } from '@/utils/utils';
 
 import { Conversation, Message } from '@/types/chat';
 
@@ -15,6 +16,7 @@ import {
   AccordionTrigger,
 } from '../Accordion/Accordion';
 import { Button } from '../Button/Button';
+import { Checkbox } from '../CheckBox/CheckBox';
 import { Input } from '../Input/Input';
 import { Label } from '../Label/Label';
 import SimpleSidebar from '../Sidebar/SimpleSidebar';
@@ -28,6 +30,7 @@ const Actionbar = () => {
 
   const [searchText, setSearchText] = useState('');
   const [replaceText, setReplaceText] = useState('');
+  const [matchCase, setMatchCase] = useState(true);
 
   const handleTogglePromptbar = () => {
     homeDispatch({ field: 'showPromptbar', value: !showPromptbar });
@@ -50,14 +53,25 @@ const Actionbar = () => {
     if (selectedConversation && searchText && replaceText) {
       const updatedMessages = selectedConversation.messages.map(
         (v: Message, index: number) => {
-          v.content = v.content.replaceAll(searchText, replaceText);
+          v.content = replaceAll(v.content, searchText, replaceText, matchCase);
           return v;
         },
       );
 
       const updatedConversation = {
         ...selectedConversation,
-        prompt: selectedConversation.prompt.replaceAll(searchText, replaceText),
+        name: replaceAll(
+          selectedConversation.name,
+          searchText,
+          replaceText,
+          matchCase,
+        ),
+        prompt: replaceAll(
+          selectedConversation.prompt,
+          searchText,
+          replaceText,
+          matchCase,
+        ),
         messages: [...updatedMessages],
       };
 
@@ -113,6 +127,19 @@ const Actionbar = () => {
                   onChange={handleReplaceTextChange}
                 />
               </div>
+
+              <div className="flex items-center w-full gap-8">
+                <div className="flex gap-2">
+                  <Checkbox
+                    id="match-case"
+                    className="dark"
+                    checked={matchCase}
+                    onCheckedChange={(v) => setMatchCase(v as boolean)}
+                  />
+                  <Label htmlFor="match-case">Match Case</Label>
+                </div>
+              </div>
+
               <Button variant="outline" onClick={handleSubmit}>
                 Run
               </Button>
