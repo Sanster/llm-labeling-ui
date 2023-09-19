@@ -37,6 +37,7 @@ import { Prompt } from '@/types/prompt';
 
 import { Chat } from '@/components/Chat/Chat';
 import { Chatbar } from '@/components/Chatbar/Chatbar';
+import Promptbar from '@/components/Promptbar';
 
 // import { Navbar } from '@/components/Mobile/Navbar';
 // import Promptbar from '@/components/Promptbar';
