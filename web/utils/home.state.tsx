@@ -5,6 +5,11 @@ import { OpenAIModel, OpenAIModelID } from '@/types/openai';
 import { PluginKey } from '@/types/plugin';
 import { Prompt } from '@/types/prompt';
 
+export const MESSAGE_FILTER_NONE = 'message-count-none';
+export const MESSAGE_FILTER_EQUAL = 'message-count-equal';
+export const MESSAGE_FILTER_GREATER = 'message-count-greater';
+export const MESSAGE_FILTER_LESS = 'message-count-less';
+
 export interface HomeInitialState {
   apiKey: string;
   apiOrg: string;
@@ -26,6 +31,8 @@ export interface HomeInitialState {
   currentFolder: FolderInterface | undefined;
   messageError: boolean;
   searchTerm: string;
+  messageCountFilterCount: number;
+  messageCountFilterMode: string;
   defaultModelId: OpenAIModelID | undefined;
   serverSideApiKeyIsSet: boolean;
   serverSidePluginKeysSet: boolean;
@@ -57,6 +64,8 @@ export const initialState: HomeInitialState = {
   currentFolder: undefined,
   messageError: false,
   searchTerm: '',
+  messageCountFilterCount: 0,
+  messageCountFilterMode: MESSAGE_FILTER_NONE,
   defaultModelId: undefined,
   serverSideApiKeyIsSet: false,
   serverSidePluginKeysSet: false,

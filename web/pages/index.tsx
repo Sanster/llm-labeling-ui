@@ -70,6 +70,8 @@ const Home = () => {
       prompts,
       page,
       searchTerm,
+      messageCountFilterMode,
+      messageCountFilterCount,
       totalPages,
     },
     dispatch,
@@ -100,14 +102,25 @@ const Home = () => {
     error: conversationsError,
     refetch: refetchConversations,
   } = useQuery(
-    ['GetConversations', page, searchTerm, 15],
+    [
+      'GetConversations',
+      page,
+      searchTerm,
+      messageCountFilterMode,
+      messageCountFilterCount,
+      15,
+    ],
     ({ signal }) => {
-      console.log(`fetch conversations ${page}, ${searchTerm}`);
+      console.log(
+        `fetch conversations ${page}, ${searchTerm}, ${messageCountFilterMode}, ${messageCountFilterCount}`,
+      );
       return getConversations(
         {
           page: page,
           pageSize: 15,
           searchTerm: searchTerm,
+          messageCountFilterMode: messageCountFilterMode,
+          messageCountFilterCount: messageCountFilterCount,
         },
         signal,
       );

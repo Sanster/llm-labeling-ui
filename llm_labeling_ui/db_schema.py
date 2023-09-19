@@ -9,6 +9,14 @@ from loguru import logger
 from rich.progress import track
 from sqlalchemy import Column, select
 from sqlmodel import SQLModel, Field, create_engine, Session, JSON, col
+from sqlalchemy import func
+
+from llm_labeling_ui.const import (
+    MESSAGE_FILTER_EQUAL,
+    MESSAGE_FILTER_GREATER,
+    MESSAGE_FILTER_LESS,
+    MESSAGE_FILTER_NONE,
+)
 
 
 class TimestampModel(SQLModel):
@@ -105,7 +113,12 @@ class DBManager:
             return prompts
 
     def get_conversations(
-        self, page: int, page_size: int = 50, search_term: str = ""
+        self,
+        page: int,
+        page_size: int = 50,
+        search_term: str = "",
+        messageCountFilterCount: int = 0,
+        messageCountFilterMode: str = MESSAGE_FILTER_NONE,
     ) -> List[Conversation]:
         limit = page_size
         offset = page * page_size
@@ -116,23 +129,26 @@ class DBManager:
                 .offset(offset)
                 .limit(limit)
             )
-            if search_term:
-                statement = statement.where(
-                    col(Conversation.data).contains(search_term)
-                )
+            statement = self._filter(
+                statement, search_term, messageCountFilterCount, messageCountFilterMode
+            )
             convs = session.exec(statement).all()
             return convs
 
     def all_conversations(self, search_term: str = "") -> List[Conversation]:
         return self.get_conversations(0, 1000000000, search_term=search_term)
 
-    def count_conversations(self, search_term: str = "") -> int:
+    def count_conversations(
+        self,
+        search_term: str = "",
+        messageCountFilterCount: int = 0,
+        messageCountFilterMode: str = MESSAGE_FILTER_NONE,
+    ) -> int:
         with Session(self.engine) as session:
-            statement = select(Conversation.id)
-            if search_term:
-                statement = statement.where(
-                    col(Conversation.data).contains(search_term)
-                )
+            statement = select(Conversation.data)
+            statement = self._filter(
+                statement, search_term, messageCountFilterCount, messageCountFilterMode
+            )
             convs = session.exec(statement).all()
             return len(convs)
 
@@ -164,3 +180,27 @@ class DBManager:
     def vacuum(self):
         with Session(self.engine) as session:
             session.execute("VACUUM")
+
+    def _filter(
+        self, statement, search_term, messageCountFilterCount, messageCountFilterMode
+    ):
+        if messageCountFilterMode == MESSAGE_FILTER_EQUAL:
+            statement = statement.where(
+                func.json_array_length(Conversation.data.op("->>")("messages"))
+                == messageCountFilterCount
+            )
+        elif messageCountFilterMode == MESSAGE_FILTER_GREATER:
+            statement = statement.where(
+                func.json_array_length(Conversation.data.op("->>")("messages"))
+                > messageCountFilterCount
+            )
+        elif messageCountFilterMode == MESSAGE_FILTER_LESS:
+            statement = statement.where(
+                func.json_array_length(Conversation.data.op("->>")("messages"))
+                < messageCountFilterCount
+            )
+
+        if search_term:
+            statement = statement.where(col(Conversation.data).contains(search_term))
+
+        return statement

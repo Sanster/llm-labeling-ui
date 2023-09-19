@@ -13,6 +13,8 @@ export interface GetConversationsRequestProps {
   page: number;
   pageSize: number;
   searchTerm: string;
+  messageCountFilterMode: string;
+  messageCountFilterCount: number;
 }
 
 export interface GetTokenCountRequestProps {
