@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from pathlib import Path
+import random
 from typing import List
 from rich import print
 
@@ -184,6 +185,34 @@ def remove_duplicate_conversation(
         db.vacuum()
 
 
+@typer_app.command(help="Delete conversation contain certain string")
+def delete_conversation(
+    db_path: Path = typer.Option(None, exists=True, dir_okay=False),
+    search: str = typer.Option(None, help="string to search"),
+    run: bool = typer.Option(False, help="run the command"),
+):
+    db = DBManager(db_path)
+    conversations = [Conversation(**it.data) for it in db.all_conversations()]
+    logger.info(f"Total conversations: {len(conversations)}")
+
+    conversation_to_remove = []
+    for it in track(conversations, description="finding duplicate"):
+        merged_text = it.merged_text()
+        if search in merged_text:
+            conversation_to_remove.append(it)
+
+    for it in conversation_to_remove[:5]:
+        print("=".center(100, "="))
+        print(it)
+
+    logger.info(f"Found {len(conversation_to_remove)} conversations to remove")
+
+    if run:
+        for it in track(conversation_to_remove, description="removing conversations"):
+            db.delete_conversation(it.id)
+        db.vacuum()
+
+
 @typer_app.command(help="Delete string in conversation")
 def delete_string(
     db_path: Path = typer.Option(None, exists=True, dir_okay=False),
@@ -206,6 +235,73 @@ def delete_string(
             it.data["prompt"] = it.data["prompt"].replace(string, "")
             for m in it.data["messages"]:
                 m["content"] = m["content"].replace(string, "")
+            it.updated_at = datetime.utcnow()
+            db.update_conversation(it)
+        db.vacuum()
+
+
+@typer_app.command(help="Replace string in conversation")
+def replace_string(
+    db_path: Path = typer.Option(None, exists=True, dir_okay=False),
+    search: str = typer.Option(..., help="string to search"),
+    replace: str = typer.Option(..., help="replacement string"),
+    run: bool = typer.Option(False, help="run the command"),
+    shuffle_preview: bool = typer.Option(True, help="shuffle preview"),
+):
+    db = DBManager(db_path)
+    conversations = db.all_conversations()
+    logger.info("Preview first 5 conversations:")
+    max_preview = 5
+    preview_count = 0
+
+    matched_conversations = []
+    if shuffle_preview:
+        random.shuffle(conversations)
+    for c in track(conversations):
+        matched = False
+        matched_messages = []
+
+        if search in c.data["name"]:
+            matched = True
+            if preview_count < max_preview:
+                matched_messages.append(c.data["name"])
+
+        if search in c.data["prompt"]:
+            matched = True
+            if preview_count < max_preview:
+                matched_messages.append(c.data["prompt"])
+
+        for m in c.data["messages"]:
+            if search in m["content"]:
+                matched = True
+                if preview_count < max_preview:
+                    matched_messages.append(m["content"])
+
+        if matched:
+            preview_count += 1
+
+            if preview_count < max_preview:
+                print(f"Search Result-{preview_count}".center(100, "-"))
+                print("[bold red]Original Data[/bold red]")
+                print(matched_messages)
+                print("[bold green]Replaced Data[/bold green]")
+                modified_messages = [
+                    _.replace(search, replace) for _ in matched_messages
+                ]
+                print(modified_messages)
+
+            matched_conversations.append(c)
+
+    logger.info(
+        f"Total conversations {db.count_conversations()}, contains [{search}]: {len(matched_conversations)}"
+    )
+
+    if run:
+        for it in track(matched_conversations, description="replacing string"):
+            it.data["name"] = it.data["name"].replace(search, replace)
+            it.data["prompt"] = it.data["prompt"].replace(search, replace)
+            for m in it.data["messages"]:
+                m["content"] = m["content"].replace(search, replace)
             it.updated_at = datetime.utcnow()
             db.update_conversation(it)
         db.vacuum()
