@@ -32,9 +32,12 @@ class UUIDIDModel(SQLModel):
 class Conversation(UUIDIDModel, TimestampModel, table=True):
     data: Dict = Field(default={}, sa_column=Column(JSON))
 
-    def merged_text(self) -> str:
+    def merged_text(self, max_messages: int = -1) -> str:
+        if max_messages == -1:
+            max_messages = len(self.data["messages"])
         return "".join(
-            [self.data["prompt"]] + [m["content"] for m in self.data["messages"]]
+            [self.data["prompt"]]
+            + [m["content"] for m in self.data["messages"][0:max_messages]]
         )
 
     class Config:
@@ -134,6 +137,15 @@ class DBManager:
             statement = self._filter(
                 statement, search_term, messageCountFilterCount, messageCountFilterMode
             )
+            convs = session.exec(statement).all()
+            return convs
+
+    def get_conversations_by_ids(
+        self,
+        ids: List[str],
+    ) -> List[Conversation]:
+        with Session(self.engine) as session:
+            statement = sqlmodel.select(Conversation).where(Conversation.id.in_(ids))
             convs = session.exec(statement).all()
             return convs
 

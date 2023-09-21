@@ -1,3 +1,4 @@
+import json
 import math
 import os
 from datetime import datetime
@@ -9,6 +10,7 @@ from rich import print
 import typer
 from gunicorn.app.base import BaseApplication
 from loguru import logger
+from rich.prompt import Prompt
 from typer import Typer
 from rich.progress import track
 from fastapi import FastAPI
@@ -65,7 +67,7 @@ def post_worker_init(worker):
     api.app.include_router(api.router)
 
 
-@typer_app.command()
+@typer_app.command(help="Start the web server")
 def start(
     host: str = typer.Option("0.0.0.0"),
     port: int = typer.Option(8000),
@@ -345,6 +347,164 @@ def classify_lang(
             lang = lang_classifier(conv.merged_text())
             conv.data["lang"] = lang
         db.bucket_update_conversation([it.dict() for it in convs])
+
+
+@typer_app.command(help="Create embedding")
+def create_embedding(
+    db_path: Path = typer.Option(..., exists=True, dir_okay=False),
+    save_path: Path = typer.Option(
+        None,
+        dir_okay=False,
+        help="Parquet file with column name: id, embedding. If None, embedding will be saved in the same directory as db_path, with parquet file suffix.",
+    ),
+    model_id: str = typer.Option("BAAI/bge-small-zh-v1.5"),
+    device: str = typer.Option("cpu"),
+):
+    if save_path is None:
+        save_path = db_path.with_suffix(".parquet")
+
+    from llm_labeling_ui.embedding import EmbeddingModel
+    import pandas as pd
+
+    db = DBManager(db_path)
+    model = EmbeddingModel(model_id, device)
+
+    if save_path.exists():
+        exists_df = pd.read_parquet(save_path)
+        logger.info(f"Load exists embedding: {len(exists_df)}")
+    else:
+        exists_df = None
+
+    res = []
+    total = db.count_conversations()
+    logger.info(f"Total conversations: {total}")
+    page_size = 256
+    for convs in track(
+        db.gen_conversations(page_size), total=math.ceil(total / page_size)
+    ):
+        for conv in convs:
+            if exists_df is not None:
+                if str(conv.id) in exists_df["id"].values:
+                    continue
+            vector = model(conv.merged_text())
+            res.append({"id": str(conv.id), "embedding": vector})
+
+    df = pd.DataFrame(res)
+    if exists_df is not None:
+        logger.info(f"df ({len(df)})")
+        df = pd.concat([exists_df, df], ignore_index=True)
+        logger.info(f"Merge result: {len(df)}")
+
+    df.to_parquet(save_path)
+
+
+@typer_app.command(help="DBSCAN embedding cluster")
+def cluster_embedding(
+    embedding: Path = typer.Option(
+        ...,
+        exists=True,
+        dir_okay=False,
+        help="Parquet file with column name: id, embedding.",
+    ),
+    save_path: Path = typer.Option(
+        None,
+        exists=False,
+        dir_okay=False,
+        help="If None, cluster result will be saved in the same directory as parquet file",
+    ),
+    force: bool = typer.Option(False, help="Force to run clustering"),
+    eps: float = typer.Option(0.2, help="DBSCAN eps"),
+    min_samples: int = typer.Option(3, help="DBSCAN min_samples"),
+    max_samples: int = typer.Option(
+        20,
+        help="If the number of samples in a cluster exceeds max_samples, multiply eps by 2/3 and cluster again.",
+    ),
+    epochs: int = typer.Option(5, help="Number of times all data is clustered."),
+    bucket_size: int = typer.Option(
+        20000, help="The maximum amount of data for a single cluster"
+    ),
+):
+    import pandas as pd
+    from llm_labeling_ui.cluster_dedup import run_dbscan_cluster
+
+    if save_path is None:
+        save_path = embedding.with_suffix(".cluster.json")
+    if save_path.exists():
+        if not force:
+            logger.error(
+                f"Cluster result exists: {save_path}, use --force to overwrite."
+            )
+            return
+        else:
+            logger.warning(f"Force to run clustering, save result to {save_path}")
+
+    logger.info(f"Save cluster result to {save_path}")
+
+    df = pd.read_parquet(embedding)
+    id_groups = run_dbscan_cluster(
+        df, eps, min_samples, max_samples, epochs, bucket_size
+    )
+    logger.info(
+        f"Total samples: {len(df)}, cluster group count: {len(id_groups)}, samples in clusters: {sum([len(it) for it in id_groups])}"
+    )
+    with open(save_path, "w", encoding="utf-8") as fw:
+        json.dump(
+            {
+                "groups": id_groups,
+                "meta": {
+                    "eps": eps,
+                    "min_samples": min_samples,
+                    "max_samples": max_samples,
+                    "epochs": epochs,
+                    "bucket_size": bucket_size,
+                },
+            },
+            fw,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+
+@typer_app.command(help="View cluster result")
+def view_cluster(
+    db_path: Path = typer.Option(..., exists=True, dir_okay=False),
+    cluster_path: Path = typer.Option(..., exists=True, dir_okay=False),
+):
+    with open(cluster_path, "r", encoding="utf-8") as fr:
+        cluster_result = json.load(fr)
+    id_groups: List[List[str]] = cluster_result["groups"]
+    id_groups.sort(key=lambda it: len(it), reverse=True)
+
+    db = DBManager(db_path)
+    index = 0
+    while True:
+        group = id_groups[index]
+        convs = db.get_conversations_by_ids(group)
+        for conv_i, conv in enumerate(convs):
+            print(
+                f"conv{conv_i}-message-count:{len(conv.data['messages'])}".center(
+                    80, "-"
+                )
+            )
+            print(conv.merged_text(max_messages=1))
+        choice = Prompt.ask(
+            f"group: {index}/{len(id_groups)}",
+            choices=["h", "l", "n", "r"],
+            default="l",
+        )
+        if choice == "h":
+            index -= 1
+            if index < 0:
+                index = len(id_groups) - 1
+        elif choice == "l":
+            index += 1
+            if index >= len(id_groups):
+                index = 0
+        elif choice == "r":
+            random_index = random.randint(0, len(id_groups) - 1)
+            index = random_index
+        elif choice == "n":
+            break
 
 
 if __name__ == "__main__":
