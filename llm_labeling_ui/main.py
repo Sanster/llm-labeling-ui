@@ -1,3 +1,4 @@
+import math
 import os
 from datetime import datetime
 from pathlib import Path
@@ -185,10 +186,27 @@ def remove_duplicate_conversation(
         db.vacuum()
 
 
+@typer_app.command(help="View conversation contain certain strings")
+def view_conversation(
+    db_path: Path = typer.Option(..., exists=True, dir_okay=False),
+    search: List[str] = typer.Option(..., help="string to search"),
+    preview: int = typer.Option(5, help="preview count"),
+):
+    db = DBManager(db_path)
+    conversations = [
+        Conversation(**it.data) for it in db.all_conversations(search_term=search)
+    ]
+
+    for it in conversations[:preview]:
+        print(it)
+
+    logger.info(f"Total conversations: {len(conversations)}")
+
+
 @typer_app.command(help="Delete conversation contain certain string")
 def delete_conversation(
-    db_path: Path = typer.Option(None, exists=True, dir_okay=False),
-    search: str = typer.Option(None, help="string to search"),
+    db_path: Path = typer.Option(..., exists=True, dir_okay=False),
+    search: str = typer.Option(..., help="string to search"),
     run: bool = typer.Option(False, help="run the command"),
 ):
     db = DBManager(db_path)
@@ -305,6 +323,28 @@ def replace_string(
             it.updated_at = datetime.utcnow()
             db.update_conversation(it)
         db.vacuum()
+
+
+@typer_app.command(help="Language Classification")
+def classify_lang(
+    db_path: Path = typer.Option(..., exists=True, dir_okay=False),
+):
+    from llm_labeling_ui.lang_classification import LanguageClassifier
+
+    lang_classifier = LanguageClassifier()
+    db = DBManager(db_path)
+    conversions_count = db.count_conversations()
+    logger.info(f"Total conversations: {conversions_count}")
+    page_size = 256
+    total_pages = math.ceil(conversions_count / page_size)
+    for page in track(range(total_pages)):
+        convs = db.get_conversations(page=page, page_size=page_size)
+        for conv in convs:
+            if conv.data.get("lang"):
+                continue
+            lang = lang_classifier(conv.merged_text())
+            conv.data["lang"] = lang
+        db.bucket_update_conversation([it.dict() for it in convs])
 
 
 if __name__ == "__main__":

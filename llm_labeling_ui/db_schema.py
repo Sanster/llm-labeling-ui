@@ -1,7 +1,8 @@
 import json
 from datetime import datetime
+import math
 from pathlib import Path
-from typing import Optional, Dict, List
+from typing import Iterator, Optional, Dict, List, Union
 from uuid import UUID, uuid4
 
 import sqlmodel
@@ -30,6 +31,11 @@ class UUIDIDModel(SQLModel):
 
 class Conversation(UUIDIDModel, TimestampModel, table=True):
     data: Dict = Field(default={}, sa_column=Column(JSON))
+
+    def merged_text(self) -> str:
+        return "".join(
+            [self.data["prompt"]] + [m["content"] for m in self.data["messages"]]
+        )
 
     class Config:
         arbitrary_types_allowed = True
@@ -69,15 +75,11 @@ class DBManager:
                 session.add(Conversation(id=it.id, data=it.dict()))
             session.commit()
 
-            for it in track(
-                chatbot_ui_history.folders, description="writing folders to db"
-            ):
+            for it in chatbot_ui_history.folders:
                 session.add(Folder(data=it.dict()))
             session.commit()
 
-            for it in track(
-                chatbot_ui_history.prompts, description="writing prompts to db"
-            ):
+            for it in chatbot_ui_history.prompts:
                 session.add(PromptTemp(data=it.dict()))
             session.commit()
         return self
@@ -116,7 +118,7 @@ class DBManager:
         self,
         page: int,
         page_size: int = 50,
-        search_term: str = "",
+        search_term: Union[str, List[str]] = "",
         messageCountFilterCount: int = 0,
         messageCountFilterMode: str = MESSAGE_FILTER_NONE,
     ) -> List[Conversation]:
@@ -135,8 +137,16 @@ class DBManager:
             convs = session.exec(statement).all()
             return convs
 
-    def all_conversations(self, search_term: str = "") -> List[Conversation]:
+    def all_conversations(
+        self, search_term: Union[str, List[str]] = ""
+    ) -> List[Conversation]:
         return self.get_conversations(0, 1000000000, search_term=search_term)
+
+    def gen_conversations(self, batch_size) -> Iterator[List[Conversation]]:
+        total = self.count_conversations()
+        total_pages = math.ceil(total / batch_size)
+        for page in range(total_pages):
+            yield self.get_conversations(page, batch_size)
 
     def count_conversations(
         self,
@@ -162,6 +172,12 @@ class DBManager:
             session.commit()
             session.refresh(exist_conv)
             # return exist_conv
+
+    def bucket_update_conversation(self, convs: List[Conversation]):
+        with Session(self.engine) as session:
+            session.bulk_update_mappings(Conversation, convs)
+            session.flush()
+            session.commit()
 
     def create_conversation(self, conv: Conversation):
         with Session(self.engine) as session:
@@ -201,6 +217,10 @@ class DBManager:
             )
 
         if search_term:
-            statement = statement.where(col(Conversation.data).contains(search_term))
+            if isinstance(search_term, str):
+                search_term = [search_term]
+
+            for s in search_term:
+                statement = statement.where(col(Conversation.data).contains(s))
 
         return statement
