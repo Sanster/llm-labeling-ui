@@ -155,12 +155,12 @@ class DBManager:
         messageCountFilterMode: str = MESSAGE_FILTER_NONE,
     ) -> int:
         with Session(self.engine) as session:
-            statement = select(Conversation.data)
+            statement = select(func.count(Conversation.id))
             statement = self._filter(
                 statement, search_term, messageCountFilterCount, messageCountFilterMode
             )
             convs = session.exec(statement).all()
-            return len(convs)
+            return convs[0][0]
 
     def update_conversation(self, conv: Conversation):
         with Session(self.engine) as session:
