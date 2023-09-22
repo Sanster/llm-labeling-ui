@@ -12,7 +12,7 @@ from sqlalchemy import Column, select
 from sqlmodel import SQLModel, Field, create_engine, Session, JSON, col
 from sqlalchemy import func
 
-from llm_labeling_ui.const import (
+from llm_labeling_ui.utils import (
     MESSAGE_FILTER_EQUAL,
     MESSAGE_FILTER_GREATER,
     MESSAGE_FILTER_LESS,

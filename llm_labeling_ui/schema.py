@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 from sqlmodel import SQLModel
-from llm_labeling_ui.const import MESSAGE_FILTER_NONE
+from llm_labeling_ui.utils import MESSAGE_FILTER_NONE
 from llm_labeling_ui.db_schema import Conversation as DBConversation
 
 OpenAIModelID = {
