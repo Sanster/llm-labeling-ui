@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 import math
 from pathlib import Path
+import random
 from typing import Iterator, Optional, Dict, List, Union
 from uuid import UUID, uuid4
 
@@ -93,7 +94,9 @@ class DBManager:
             session.commit()
         return self
 
-    def export_to_json_file(self, json_p: Path, min_messages: int, max_messages: int):
+    def export_to_json_file(
+        self, json_p: Path, count: int, min_messages: int, max_messages: int
+    ):
         from llm_labeling_ui.schema import (
             ChatBotUIHistory,
             Conversation as UIConversation,
@@ -104,9 +107,16 @@ class DBManager:
         chatbot_ui_history.prompts = self.get_prompt_temps()
         with Session(self.engine) as session:
             statement = sqlmodel.select(Conversation)
-            for it in track(session.exec(statement).all()):
+            results = session.exec(statement).all()
+            logger.info(f"Shuffling {len(results)} conversations")
+            random.shuffle(results)
+            for it in track(results):
                 if min_messages <= it.messages_count() < max_messages:
                     chatbot_ui_history.history.append(UIConversation(**it.data))
+
+            if count == -1:
+                count = len(results)
+            chatbot_ui_history.history = chatbot_ui_history.history[:count]
 
         logger.info(f"export {len(chatbot_ui_history.history)} conversations")
         with open(json_p, "w", encoding="utf-8") as f:

@@ -23,7 +23,7 @@ def remove_prefix(
     run: bool = typer.Option(False, help="run the command"),
 ):
     db = DBManager(db_path)
-    conversations = [Conversation(**it.data) for it in db.all_conversations()]
+    conversations = db.all_conversations()
     logger.info(f"Total conversations: {len(conversations)}")
 
     import pygtrie
@@ -53,7 +53,7 @@ def remove_duplicate(
     run: bool = typer.Option(False, help="run the command"),
 ):
     db = DBManager(db_path)
-    conversations = [Conversation(**it.data) for it in db.all_conversations()]
+    conversations = db.all_conversations()
     logger.info(f"Total conversations: {len(conversations)}")
 
     conversation_to_remove = []

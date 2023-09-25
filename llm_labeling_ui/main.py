@@ -47,6 +47,7 @@ def export(
     ),
     min_messages: int = typer.Option(0, help="min messages count. included"),
     max_messages: int = typer.Option(10000, help="max messages count. excluded"),
+    count: int = typer.Option(-1, help="max conversations to export. -1 for all."),
     force: bool = typer.Option(False, help="force overwrite save_path if exists"),
 ):
     if save_path and save_path.exists():
@@ -60,7 +61,7 @@ def export(
     logger.info(f"Dumping db to {save_path}")
     db = DBManager(db_path)
     db.export_to_json_file(
-        save_path, min_messages=min_messages, max_messages=max_messages
+        save_path, count, min_messages=min_messages, max_messages=max_messages
     )
 
 

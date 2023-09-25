@@ -32,7 +32,10 @@ def create_embedding(
         dir_okay=False,
         help="Parquet file with column name: id, embedding. If None, embedding will be saved in the same directory as db_path, with parquet file suffix.",
     ),
-    model_id: str = typer.Option("BAAI/bge-base-zh-v1.5"),
+    model_id: str = typer.Option(
+        "BAAI/bge-large-zh-v1.5",
+        help="Embedding model id on huggingface. https://huggingface.co/models?pipeline_tag=feature-extraction",
+    ),
     max_messages: int = typer.Option(
         1, help="Number of messages used to create embedding. -1 means all messages."
     ),
@@ -64,7 +67,15 @@ def create_embedding(
             if exists_df is not None:
                 if str(conv.id) in exists_df["id"].values:
                     continue
-            vector = model(conv.merged_text(max_messages=max_messages))
+
+            messages = []
+            for msg in conv.data["messages"]:
+                if msg["role"] == "user":
+                    messages.append(msg["content"])
+            if max_messages == -1:
+                max_messages = len(messages)
+            messages = messages[:max_messages]
+            vector = model(messages)
             res.append({"id": str(conv.id), "embedding": vector})
 
     df = pd.DataFrame(res)
@@ -74,6 +85,29 @@ def create_embedding(
         logger.info(f"Merge result: {len(df)}")
 
     df.to_parquet(save_path)
+
+
+@app.command(help="Remove embedding not exists in db")
+def prune_embedding(
+    embedding: Path = typer.Option(..., exists=True, dir_okay=False),
+    db_path: Path = typer.Option(None, dir_okay=False),
+    run: bool = typer.Option(False, help="Run the command"),
+):
+    import pandas as pd
+
+    if db_path is None:
+        db_path = embedding.with_suffix(".sqlite")
+    logger.info(f"db_path: {db_path}")
+
+    db = DBManager(db_path)
+    ids = [str(it.id) for it in db.all_conversations()]
+
+    df = pd.read_parquet(embedding)
+    original_df_len = len(df)
+    df = df[df.id.isin(ids)]
+    logger.info(f"Original embedding count: {original_df_len}, after prune: {len(df)}")
+    if run:
+        df.to_parquet(embedding)
 
 
 class DBSCANMetric(str, Enum):
@@ -278,12 +312,12 @@ def dedup(
             print(Markdown(f"# Conversations to keep: ({len(convs_to_keep)})"))
 
             for c in convs_to_keep:
-                print(Markdown(f"## Message count: {c.messages_count()}"))
+                print(Markdown(f"## Message count: {c.messages_count()}. {c.id}"))
                 print(c.data["messages"][:2])
 
             print(Markdown(f"# Conversations to delete: ({len(convs_to_delete)})"))
             for c in convs_to_delete:
-                print(Markdown(f"## Message count: {c.messages_count()}"))
+                print(Markdown(f"## Message count: {c.messages_count()}. {c.id}"))
                 print(c.data["messages"][:2])
 
             if Confirm.ask("Press Enter to continue", default=True):

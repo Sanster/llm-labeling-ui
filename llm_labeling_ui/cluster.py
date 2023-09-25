@@ -142,10 +142,10 @@ class EmbeddingModel:
         self.device = device
 
     @torch.inference_mode()
-    def __call__(self, text: str) -> List[float]:
+    def __call__(self, texts: List[str]) -> List[float]:
         # Tokenize sentences
         encoded_input = self.tokenizer(
-            [text], padding=True, truncation=True, return_tensors="pt"
+            texts, padding=True, truncation=True, return_tensors="pt", max_length=512
         )
         # for s2p(short query to long passage) retrieval task, add an instruction to query (not add instruction for passages)
         # encoded_input = tokenizer([instruction + q for q in queries], padding=True, truncation=True, return_tensors='pt')
@@ -155,9 +155,9 @@ class EmbeddingModel:
         # Compute token embeddings
         model_output = self.model(**encoded_input)
         # Perform pooling. In this case, cls pooling.
-        sentence_embeddings = model_output[0][:, 0]
+        sentence_embeddings = model_output[0].mean(dim=0)[0]
         # normalize embeddings
         sentence_embeddings = torch.nn.functional.normalize(
-            sentence_embeddings, p=2, dim=1
+            sentence_embeddings, p=2, dim=0
         )
-        return sentence_embeddings.cpu().tolist()[0]
+        return sentence_embeddings.cpu().tolist()
