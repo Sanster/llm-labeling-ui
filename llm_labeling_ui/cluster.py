@@ -15,6 +15,7 @@ def _inter_run_dbscan_cluster(
     eps: float,
     min_samples: int,
     max_samples: int,
+    recluster_samples: int,
     bucket_size: int,
 ) -> List[List[str]]:
     """
@@ -64,7 +65,7 @@ def _inter_run_dbscan_cluster(
             id_group = bucket.iloc[index_group].id.tolist()
             if len(id_group) <= max_samples:
                 all_id_groups.append(id_group)
-            else:
+            elif len(id_group) >= recluster_samples:
                 large_sub_bucket = bucket[bucket["id"].isin(id_group)]
                 sub_index_groups = predict(
                     large_sub_bucket["embedding"], eps=eps * 4 / 5
@@ -75,7 +76,7 @@ def _inter_run_dbscan_cluster(
                 ]
                 if len(sub_id_groups):
                     logger.info(
-                        f"Group size: {len(large_sub_bucket)} > max_samples({max_samples}), recluster -> {len(sub_id_groups)} sub groups: {[len(it) for it in sub_id_groups]}"
+                        f"Group size: {len(large_sub_bucket)} > recluster_samples({recluster_samples}), recluster {len(sub_id_groups)} sub groups: {[len(it) for it in sub_id_groups]}"
                     )
                 for it in sub_id_groups:
                     if len(it) <= max_samples:
@@ -90,6 +91,7 @@ def run_dbscan_cluster(
     eps_decay: float,
     min_samples: int,
     max_samples: int,
+    recluster_samples: int,
     epochs: int,
     bucket_size: int,
 ) -> List[List[str]]:
@@ -114,7 +116,7 @@ def run_dbscan_cluster(
             f"Running DBSCAN clustering epoch: {iter + 1}/{epochs}, total samples: {total_samples_count}"
         )
         id_groups = _inter_run_dbscan_cluster(
-            df, metric, eps, min_samples, max_samples, bucket_size
+            df, metric, eps, min_samples, max_samples, recluster_samples, bucket_size
         )
         new_eps = eps * eps_decay
         logger.info(f"Decay eps: {eps} -> {new_eps}")

@@ -40,6 +40,12 @@ class Conversation(UUIDIDModel, TimestampModel, table=True):
             + [m["content"] for m in self.data["messages"][0:max_messages]]
         )
 
+    def messages_count(self) -> int:
+        return len(self.data["messages"])
+
+    def token_count(self, tokenizer) -> int:
+        return len(tokenizer(self.merged_text())["input_ids"])
+
     class Config:
         arbitrary_types_allowed = True
 
@@ -87,7 +93,7 @@ class DBManager:
             session.commit()
         return self
 
-    def export_to_json_file(self, json_p: Path):
+    def export_to_json_file(self, json_p: Path, min_messages: int, max_messages: int):
         from llm_labeling_ui.schema import (
             ChatBotUIHistory,
             Conversation as UIConversation,
@@ -99,7 +105,8 @@ class DBManager:
         with Session(self.engine) as session:
             statement = sqlmodel.select(Conversation)
             for it in track(session.exec(statement).all()):
-                chatbot_ui_history.history.append(UIConversation(**it.data))
+                if min_messages <= it.messages_count() < max_messages:
+                    chatbot_ui_history.history.append(UIConversation(**it.data))
 
         logger.info(f"export {len(chatbot_ui_history.history)} conversations")
         with open(json_p, "w", encoding="utf-8") as f:
@@ -197,12 +204,15 @@ class DBManager:
             session.commit()
             # return conv
 
-    def delete_conversation(self, id: str):
+    def delete_conversation(self, id: Union[str, List[str]]):
+        if not isinstance(id, list):
+            id = [id]
+
         with Session(self.engine) as session:
-            statement = select(Conversation).where(Conversation.id == id)
-            results = session.exec(statement)
-            conv = results.one()[0]
-            session.delete(conv)
+            statement = select(Conversation).where(Conversation.id.in_(id))
+            results = session.exec(statement).all()
+            for r in results:
+                session.delete(r[0])
             session.commit()
 
     def vacuum(self):

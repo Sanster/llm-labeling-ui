@@ -26,6 +26,8 @@ def export(
         dir_okay=False,
         help="If not specified, it will be generated in the same directory as db_path, and the file name will be added with a timestamp.",
     ),
+    min_messages: int = typer.Option(0, help="min messages count. included"),
+    max_messages: int = typer.Option(10000, help="max messages count. excluded"),
     force: bool = typer.Option(False, help="force overwrite save_path if exists"),
 ):
     if save_path and save_path.exists():
@@ -38,7 +40,9 @@ def export(
         )
     logger.info(f"Dumping db to {save_path}")
     db = DBManager(db_path)
-    db.export_to_json_file(save_path)
+    db.export_to_json_file(
+        save_path, min_messages=min_messages, max_messages=max_messages
+    )
 
 
 @typer_app.command(help="Language Classification")
