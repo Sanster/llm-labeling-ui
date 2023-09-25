@@ -20,7 +20,7 @@ from llm_labeling_ui.utils import interactive_view_conversations
 app = typer.Typer(
     add_completion=False,
     pretty_exceptions_show_locals=False,
-    short_help="Cluster operations, such as create embedding, cluster, etc.",
+    short_help="Cluster operations, such as create embedding, run cluster, dedup, etc.",
 )
 
 

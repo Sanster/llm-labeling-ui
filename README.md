@@ -20,11 +20,14 @@ LLM Labeling UI is a project fork from [Chatbot UI](https://github.com/mckaywrig
 - The backend code is implemented in python, the frontend code is precompiled, so it can run without a nodejs environment
 - The Chatbot UI uses localStorage to save data, with a size limit of 5MB, the LLM Labeling UI can load local data when starting the service, with no size limit
 - Web interaction:
-  - You can view data in pages
+  - You can browse the data in pages.
   - You can directly modify/delete model's response results
   - A confirmation button has been added before deleting the conversation message
-  - Display the number of messages and token length in the current dialogue
+  - Display the number of messages and token length in the current conversation
   - You can modify the system prompt during the dialogue
+  - Replace string in current conversation
+  - Filter conversations by messages count
+- Useful [command line tools](#command-line-tools) to help you clean/manage your data, such as language cleaning, duplicate removal, embedding cluster, etc.
 
 ## Quick Start
 
@@ -44,39 +47,33 @@ export OPENAI_ORGANIZATION=YOUR_ORG
 **2. Start Server**
 
 ```bash
-llm-labeling-ui start --data chatbot-ui-v4-format-history.json --tokenizer meta-llama/Llama-2-7b
+llm-labeling-ui server start --data chatbot-ui-v4-format-history.json --tokenizer meta-llama/Llama-2-7b
 ```
 
 - `--data`: Chatbot-UI-v4 format, here is an [example](./assets/chatbot_ui_example_history_file.json). Before the service starts, a `chatbot-ui-v4-format-history.sqlite` file will be created based on `chatbot-ui-v4-format-history.json`. All your modifications on the page will be saved into the sqlite file. If the `chatbot-ui-v4-format-history.sqlite` file already exists, it will be automatically read.
 - `--tokenizer` is used to display how many tokens the current conversation on the webpage contains. Please note that this is not the token consumed by calling the openai api.
 
-**3. Export data from sqlite**
+## Command Line Tools
+
+- classify-lang: Language Classification
+- cluster: Cluster operations, such as create embedding, run cluster, semantic deduplication, etc.
+- conversation: Conversation operations, such as remove prefix, remove deduplication, etc
+
+User `--help` to see more details, such as:
 
 ```bash
-llm-labeling-ui export --db-path chatbot-ui-v4-format-history.sqlite
-```
+llm-labeling-ui cluster --help
 
-By default exported data will be generated in the same directory as `--db-path`, and the file name will be added with a timestam.
+Usage: llm-labeling-ui cluster [OPTIONS] COMMAND [ARGS]...
 
-## Other features
-
-By default, all command will not perform operations on the database, it will only print some info to preview. Adding the `--run` can execute the command.
-
-1. Remove conversation which is prefix of another conversation
-
-```bash
-llm-labeling-ui remove-prefix-conversation --db-path chatbot-ui-v4-format-history.sqlite
-```
-
-2. Delete string from conversation
-
-```bash
-llm-labeling-ui delete-string --db-path chatbot-ui-v4-format-history.sqlite --string "some text"
-```
-
-
-3. Remove duplicate conversations, only keep one
-
-```bash
-llm-labeling-ui remove-duplicate-conversation --db-path chatbot-ui-v4-format-history.sqlite
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ create-embedding  Create embedding                                           │
+│ dedup             Delete redundant data in the same clustering result        │
+│                   according to certain strategies.                           │
+│ run               DBSCAN embedding cluster                                   │
+│ view              View cluster result                                        │
+╰──────────────────────────────────────────────────────────────────────────────
 ```
