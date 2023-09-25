@@ -18,6 +18,25 @@ typer_app.add_typer(conversation_app, name="conversation")
 typer_app.add_typer(server_app, name="server")
 
 
+@typer_app.command(help="Create db from chatbot-ui history file")
+def create_db(
+    json_path: Path = typer.Option(
+        ..., exists=True, dir_okay=False, help="chatbotui json history file"
+    ),
+    save_path: Path = typer.Option(None, dir_okay=False),
+    force: bool = typer.Option(False, help="force overwrite save_path if exists"),
+):
+    if save_path is None:
+        save_path = json_path.with_suffix(".sqlite")
+    logger.info(f"create db at {save_path}")
+    if save_path.exists():
+        if not force:
+            raise FileExistsError(f"{save_path} exists, use --force to overwrite")
+
+    db = DBManager(save_path)
+    db.create_from_json_file(json_path)
+
+
 @typer_app.command(help="Export db to chatbot-ui history file")
 def export(
     db_path: Path = typer.Option(None, exists=True, dir_okay=False),
