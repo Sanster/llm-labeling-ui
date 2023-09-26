@@ -89,14 +89,18 @@ def delete(
     db_path: Path = typer.Option(..., exists=True, dir_okay=False),
     search: str = typer.Option(..., help="string to search"),
     run: bool = typer.Option(False, help="run the command"),
+    role: str = typer.Option(
+        "all", help="role to search. user, assistant, system, all"
+    ),
 ):
     db = DBManager(db_path)
     conversations = db.all_conversations()
     logger.info(f"Total conversations: {len(conversations)}")
+    assert role in ["user", "assistant", "system", "all"]
 
     conversation_to_remove = []
     for it in track(conversations, description="finding duplicate"):
-        merged_text = it.merged_text()
+        merged_text = it.merged_text(role=role)
         if search in merged_text:
             conversation_to_remove.append(it)
 

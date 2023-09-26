@@ -33,13 +33,35 @@ class UUIDIDModel(SQLModel):
 class Conversation(UUIDIDModel, TimestampModel, table=True):
     data: Dict = Field(default={}, sa_column=Column(JSON))
 
-    def merged_text(self, max_messages: int = -1) -> str:
+    def merged_text(self, max_messages: int = -1, role: str = "all") -> str:
         if max_messages == -1:
             max_messages = len(self.data["messages"])
-        return "".join(
-            [self.data["prompt"]]
-            + [m["content"] for m in self.data["messages"][0:max_messages]]
-        )
+
+        if role == "all":
+            return "".join(
+                [self.data["prompt"]]
+                + [m["content"] for m in self.data["messages"][0:max_messages]]
+            )
+        elif role == "system":
+            return self.data["prompt"]
+        elif role == "user":
+            return "".join(
+                [
+                    m["content"]
+                    for m in self.data["messages"][0:max_messages]
+                    if m["role"] == "user"
+                ]
+            )
+        elif role == "assistant":
+            return "".join(
+                [
+                    m["content"]
+                    for m in self.data["messages"][0:max_messages]
+                    if m["role"] == "assistant"
+                ]
+            )
+        else:
+            raise ValueError(f"Invalid role {role}")
 
     def messages_count(self) -> int:
         return len(self.data["messages"])
