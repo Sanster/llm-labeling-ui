@@ -1,4 +1,3 @@
-import math
 from datetime import datetime
 from pathlib import Path
 
@@ -10,11 +9,14 @@ from typer import Typer
 from llm_labeling_ui.cluster_cmd import app as cluster_app
 from llm_labeling_ui.conversation_cmd import app as conversation_app
 from llm_labeling_ui.server_cmd import app as server_app
+from llm_labeling_ui.tag_cmd import app as tag_app
 from llm_labeling_ui.db_schema import DBManager
+from llm_labeling_ui.utils import parse_tag
 
 typer_app = Typer(add_completion=False, pretty_exceptions_show_locals=False)
 typer_app.add_typer(cluster_app, name="cluster")
 typer_app.add_typer(conversation_app, name="conversation")
+typer_app.add_typer(tag_app, name="tag")
 typer_app.add_typer(server_app, name="server")
 
 
@@ -45,11 +47,16 @@ def export(
         dir_okay=False,
         help="If not specified, it will be generated in the same directory as db_path, and the file name will be added with a timestamp.",
     ),
+    tag: str = typer.Option(
+        "", help="tag to filter conversations. key1,value1,key2,value2..."
+    ),
     min_messages: int = typer.Option(0, help="min messages count. included"),
     max_messages: int = typer.Option(10000, help="max messages count. excluded"),
     count: int = typer.Option(-1, help="max conversations to export. -1 for all."),
     force: bool = typer.Option(False, help="force overwrite save_path if exists"),
 ):
+    tags = parse_tag(tag)
+
     if save_path and save_path.exists():
         if not force:
             raise FileExistsError(f"{save_path} exists, use --force to overwrite")
@@ -61,30 +68,12 @@ def export(
     logger.info(f"Dumping db to {save_path}")
     db = DBManager(db_path)
     db.export_to_json_file(
-        save_path, count, min_messages=min_messages, max_messages=max_messages
+        save_path,
+        count,
+        min_messages=min_messages,
+        max_messages=max_messages,
+        tags=tags,
     )
-
-
-@typer_app.command(help="Language Classification")
-def classify_lang(
-    db_path: Path = typer.Option(..., exists=True, dir_okay=False),
-):
-    from llm_labeling_ui.lang_classification import LanguageClassifier
-
-    lang_classifier = LanguageClassifier()
-    db = DBManager(db_path)
-    conversions_count = db.count_conversations()
-    logger.info(f"Total conversations: {conversions_count}")
-    page_size = 256
-    total_pages = math.ceil(conversions_count / page_size)
-    for page in track(range(total_pages)):
-        convs = db.get_conversations(page=page, page_size=page_size)
-        for conv in convs:
-            if conv.data.get("lang"):
-                continue
-            lang = lang_classifier(conv.merged_text())
-            conv.data["lang"] = lang
-        db.bucket_update_conversation([it.dict() for it in convs])
 
 
 if __name__ == "__main__":

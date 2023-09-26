@@ -1,6 +1,7 @@
+import distutils
 import random
 import typing
-from typing import List, Union
+from typing import Any, Dict, List, Union
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -18,6 +19,8 @@ MESSAGE_FILTER_LESS = "message-count-less"
 def interactive_view_conversations(
     db, id_groups: Union[List[List[str]], List["Conversation"]], max_messages=-1
 ):
+    if len(id_groups) == 0:
+        return
     if not isinstance(id_groups[0], list):
         id_groups = [[str(c.id)] for c in id_groups]
     index = 0
@@ -56,3 +59,24 @@ def interactive_view_conversations(
             index = random_index
         elif choice == "q":
             break
+
+
+def str_to_bool(text) -> bool:
+    try:
+        return bool(distutils.util.strtobool(text))
+    except:
+        return text
+
+
+def parse_tag(text: str) -> Dict[str, Any]:
+    if not text:
+        return {}
+
+    splits = text.split(",")
+    if len(splits) % 2 != 0:
+        raise ValueError(f"Invalid tag {text}, please use key1,value1,key2,value2,...")
+
+    tags = {}
+    for i in range(0, len(splits), 2):
+        tags[splits[i]] = str_to_bool(splits[i + 1])
+    return tags

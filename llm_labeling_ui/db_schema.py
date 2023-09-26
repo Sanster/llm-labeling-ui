@@ -33,6 +33,14 @@ class UUIDIDModel(SQLModel):
 class Conversation(UUIDIDModel, TimestampModel, table=True):
     data: Dict = Field(default={}, sa_column=Column(JSON))
 
+    def contain_tags(self, tags: Dict) -> bool:
+        flag = True
+        for k, v in tags.items():
+            if self.data.get("tags", {}).get(k) != v:
+                flag = False
+                break
+        return flag
+
     def merged_text(self, max_messages: int = -1, role: str = "all") -> str:
         if max_messages == -1:
             max_messages = len(self.data["messages"])
@@ -117,7 +125,12 @@ class DBManager:
         return self
 
     def export_to_json_file(
-        self, json_p: Path, count: int, min_messages: int, max_messages: int
+        self,
+        json_p: Path,
+        count: int,
+        min_messages: int,
+        max_messages: int,
+        tags: Dict = {},
     ):
         from llm_labeling_ui.schema import (
             ChatBotUIHistory,
@@ -130,6 +143,14 @@ class DBManager:
         with Session(self.engine) as session:
             statement = sqlmodel.select(Conversation)
             results = session.exec(statement).all()
+
+            if tags:
+                _new_results = []
+                for it in results:
+                    if it.contain_tags(tags):
+                        _new_results.append(it)
+                results = _new_results
+
             logger.info(f"Shuffling {len(results)} conversations")
             random.shuffle(results)
             for it in track(results):

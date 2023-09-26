@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import List
 
 import typer
@@ -8,7 +9,7 @@ from loguru import logger
 from rich.progress import track
 
 from llm_labeling_ui.db_schema import DBManager, Conversation
-from llm_labeling_ui.utils import interactive_view_conversations
+from llm_labeling_ui.utils import interactive_view_conversations, parse_tag
 
 app = typer.Typer(
     add_completion=False,
@@ -84,15 +85,19 @@ def view(
     interactive_view_conversations(db, conversations, max_messages=5)
 
 
-@app.command(help="Delete conversation contain certain string")
+@app.command(help="Delete conversation contain certain string / tags")
 def delete(
     db_path: Path = typer.Option(..., exists=True, dir_okay=False),
-    search: str = typer.Option(..., help="string to search"),
+    search: str = typer.Option("", help="string to search"),
     run: bool = typer.Option(False, help="run the command"),
+    tag: str = typer.Option(
+        "", help="tag to filter conversations. key1,value1,key2,value2..."
+    ),
     role: str = typer.Option(
         "all", help="role to search. user, assistant, system, all"
     ),
 ):
+    tags = parse_tag(tag)
     db = DBManager(db_path)
     conversations = db.all_conversations()
     logger.info(f"Total conversations: {len(conversations)}")
@@ -100,6 +105,8 @@ def delete(
 
     conversation_to_remove = []
     for it in track(conversations, description="finding duplicate"):
+        if not it.contain_tags(tags):
+            continue
         merged_text = it.merged_text(role=role)
         if search in merged_text:
             conversation_to_remove.append(it)
@@ -111,7 +118,8 @@ def delete(
             db.delete_conversation(it.id)
         db.vacuum()
     else:
-        interactive_view_conversations(db, conversation_to_remove, max_messages=5)
+        if len(conversation_to_remove) > 0:
+            interactive_view_conversations(db, conversation_to_remove, max_messages=5)
 
 
 @app.command(help="Delete string in conversation")
