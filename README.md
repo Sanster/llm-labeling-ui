@@ -55,9 +55,9 @@ llm-labeling-ui server start --data chatbot-ui-v4-format-history.json --tokenize
 
 ## Command Line Tools
 
-- classify-lang: Language Classification
 - cluster: Cluster operations, such as create embedding, run cluster, semantic deduplication, etc.
 - conversation: Conversation operations, such as remove prefix, remove deduplication, etc
+- tag: Add tags to you data, such as lang classification(en,zh..), traditional or simplified chinese classification, etc.
 
 User `--help` to see more details, such as:
 
@@ -73,6 +73,7 @@ Usage: llm-labeling-ui cluster [OPTIONS] COMMAND [ARGS]...
 │ create-embedding  Create embedding                                           │
 │ dedup             Delete redundant data in the same clustering result        │
 │                   according to certain strategies.                           │
+| prune-embedding   Remove embedding not exists in db                          |
 │ run               DBSCAN embedding cluster                                   │
 │ view              View cluster result                                        │
 ╰──────────────────────────────────────────────────────────────────────────────

@@ -10,7 +10,7 @@ from llm_labeling_ui.db_schema import DBManager
 app = typer.Typer(
     add_completion=False,
     pretty_exceptions_show_locals=False,
-    short_help="Add tags to you data",
+    short_help="Add tags to you data, such as lang classification(en,zh..), traditional or simplified chinese classification, etc.",
 )
 
 
