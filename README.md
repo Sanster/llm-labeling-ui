@@ -20,13 +20,13 @@ LLM Labeling UI is a project fork from [Chatbot UI](https://github.com/mckaywrig
 - The backend code is implemented in python, the frontend code is precompiled, so it can run without a nodejs environment
 - The Chatbot UI uses localStorage to save data, with a size limit of 5MB, the LLM Labeling UI can load local data when starting the service, with no size limit
 - Web interaction:
-  - You can browse the data in pages.
-  - You can directly modify/delete model's response results
+  - Browse data in pages, search by keywords, filter by messages count.
+  - Directly modify/delete model's response results.
+  - Split long conversations into multiple conversations
   - A confirmation button has been added before deleting the conversation message
   - Display the number of messages and token length in the current conversation
-  - You can modify the system prompt during the dialogue
+  - Allow modify system prompt during the dialogue
   - Replace string in current conversation
-  - Filter conversations by messages count
 - Useful [command line tools](#command-line-tools) to help you clean/manage your data, such as language cleaning, duplicate removal, embedding cluster, etc.
 
 ## Quick Start

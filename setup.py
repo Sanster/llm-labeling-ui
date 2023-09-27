@@ -23,7 +23,7 @@ def load_requirements():
 
 setuptools.setup(
     name="llm-labeling-ui",
-    version="0.8.0",
+    version="0.9.0",
     author="PanicByte",
     author_email="cwq1913@gmail.com",
     description="LLM Labeling UI is an open source project for large language model data labeling",
