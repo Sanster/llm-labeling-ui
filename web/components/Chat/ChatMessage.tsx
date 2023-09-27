@@ -262,7 +262,9 @@ export const ChatMessage: FC<Props> = memo(
         }`;
 
         res += `, Context token: ${
-          tokenCumulativeCounts[messageIndex] + tokenData.promptTokenCount
+          tokenCumulativeCounts[messageIndex] -
+          tokenData.messagesTokenCounts[messageIndex] +
+          tokenData.promptTokenCount
         }`;
       }
       return res;
