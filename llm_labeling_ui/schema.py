@@ -108,6 +108,11 @@ class GetConversionsResponse(BaseModel):
     totalConversations: int
 
 
+class SplitConversationRequest(BaseModel):
+    conversation: Conversation
+    messageIndex: int
+
+
 class CountTokensRequest(BaseModel):
     text: str
 

@@ -44,6 +44,8 @@ import Promptbar from '@/components/Promptbar';
 // import Promptbar from '@/components/Promptbar';
 import { v4 as uuidv4 } from 'uuid';
 
+const PAGE_SIZE = 15;
+
 const Home = () => {
   const serverSideApiKeyIsSet = false;
   const serverSidePluginKeysSet = false;
@@ -108,7 +110,7 @@ const Home = () => {
       searchTerm,
       messageCountFilterMode,
       messageCountFilterCount,
-      15,
+      PAGE_SIZE,
     ],
     ({ signal }) => {
       console.log(
@@ -117,7 +119,7 @@ const Home = () => {
       return getConversations(
         {
           page: page,
-          pageSize: 15,
+          pageSize: PAGE_SIZE,
           searchTerm: searchTerm,
           messageCountFilterMode: messageCountFilterMode,
           messageCountFilterCount: messageCountFilterCount,
@@ -485,6 +487,57 @@ const Home = () => {
     serverSidePluginKeysSet,
   ]);
 
+  const handleSplitConversation = async (
+    conversation: Conversation,
+    messageIndex: number,
+  ) => {
+    try {
+      const res = await fetchService.post<Conversation>(
+        '/api/split_conversation',
+        {
+          body: {
+            conversation,
+            messageIndex: messageIndex,
+          },
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    } catch (e) {
+      toast.error(JSON.stringify(e));
+      return;
+    }
+
+    if (selectedConversation) {
+      const updatedConversation = {
+        ...selectedConversation,
+        messages: selectedConversation?.messages?.slice(0, messageIndex),
+      };
+
+      const { single, all } = updateConversation(
+        updatedConversation,
+        conversations,
+      );
+
+      dispatch({ field: 'selectedConversation', value: single });
+      dispatch({ field: 'conversations', value: all });
+    }
+
+    if (selectedConversationPageIndex !== undefined) {
+      if (selectedConversationPageIndex === PAGE_SIZE - 1) {
+        dispatch({ field: 'page', value: page + 1 });
+        dispatch({ field: 'selectedConversationPageIndex', value: 0 });
+      } else {
+        dispatch({
+          field: 'selectedConversationPageIndex',
+          value: selectedConversationPageIndex + 1,
+        });
+      }
+    }
+    refetchConversations();
+  };
+
   return (
     <HomeContext.Provider
       value={{
@@ -496,6 +549,7 @@ const Home = () => {
         handleSelectConversation,
         handleUpdateConversation,
         handleDeleteConversation,
+        handleSplitConversation,
       }}
     >
       <Head>

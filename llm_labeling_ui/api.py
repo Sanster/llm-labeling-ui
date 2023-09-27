@@ -26,6 +26,7 @@ from llm_labeling_ui.schema import (
     Conversation,
     CountTokensResponse,
     CountTokensRequest,
+    SplitConversationRequest,
 )
 
 error503 = "OpenAI server is busy, try again later"
@@ -93,6 +94,13 @@ class Api:
         self.add_api_route(
             "/api/create_conversation",
             self.create_conversation,
+            methods=["POST"],
+            # response_model=Conversation,
+        )
+
+        self.add_api_route(
+            "/api/split_conversation",
+            self.split_conversation,
             methods=["POST"],
             # response_model=Conversation,
         )
@@ -208,6 +216,17 @@ class Api:
     def create_conversation(self, req: Conversation):
         db_req = DBConversation(id=req.id, data=req.dict())
         self.db.create_conversation(db_req)
+        return "ok", 200
+        # return Conversation(**db_res.data)
+
+    def split_conversation(self, req: SplitConversationRequest):
+        try:
+            db_req = DBConversation(
+                id=req.conversation.id, data=req.conversation.dict()
+            )
+            self.db.split_conversation(conv=db_req, message_index=req.messageIndex)
+        except Exception as e:
+            raise HTTPException(500, "Failed to split conversation: " + str(e))
         return "ok", 200
         # return Conversation(**db_res.data)
 

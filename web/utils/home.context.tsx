@@ -24,6 +24,9 @@ export interface HomeContextProps {
     conversation: Conversation,
     data: KeyValuePair,
   ) => void;
+  handleSplitConversation: {
+    (conversation: Conversation, messageIndex: number): void;
+  };
 }
 
 const HomeContext = createContext<HomeContextProps>(undefined!);

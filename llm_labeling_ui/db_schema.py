@@ -1,3 +1,4 @@
+import copy
 import json
 from datetime import datetime
 import math
@@ -256,6 +257,29 @@ class DBManager:
             session.add(conv)
             session.commit()
             # return conv
+
+    def split_conversation(self, conv: Conversation, message_index: int):
+        with Session(self.engine) as session:
+            statement = select(Conversation).where(Conversation.id == conv.id)
+            exist_conv = session.exec(statement).one()[0]
+
+            messages = conv.data["messages"]
+            messages_4_update = messages[:message_index]
+            messages_4_create = messages[message_index:]
+
+            exist_conv.data["messages"] = messages_4_update
+            self.update_conversation(exist_conv)
+
+            new_conv = Conversation()
+            new_conv.data["folderId"] = None
+            new_conv.data["temperature"] = exist_conv.data["temperature"]
+            new_conv.data["id"] = str(new_conv.id)
+            new_conv.data["name"] = messages_4_create[0]["content"][:20]
+            new_conv.data["messages"] = messages_4_create
+            new_conv.data["model"] = exist_conv.data["model"]
+            new_conv.data["prompt"] = exist_conv.data["prompt"]
+            session.add_all([new_conv, exist_conv])
+            session.commit()
 
     def delete_conversation(self, id: Union[str, List[str]]):
         if not isinstance(id, list):

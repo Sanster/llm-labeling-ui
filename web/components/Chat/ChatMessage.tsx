@@ -6,18 +6,22 @@ import { useTranslation } from 'next-i18next';
 
 import { useFetch } from '@/hooks/useFetch';
 
+import { DEFAULT_SYSTEM_PROMPT, DEFAULT_TEMPERATURE } from '@/utils/app/const';
 import { updateConversation } from '@/utils/app/conversation';
 import HomeContext from '@/utils/home.context';
 
 import { Conversation, Message } from '@/types/chat';
+import { OpenAIModelID, OpenAIModels } from '@/types/openai';
 
 import { CodeBlock } from '../Markdown/CodeBlock';
 import { MemoizedReactMarkdown } from '../Markdown/MemoizedReactMarkdown';
 import { DeleteMessage } from './DeleteChatMessage';
+import { SplitConversation } from './SplitConversation';
 
 import rehypeMathjax from 'rehype-mathjax';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface Props {
   message: Message;
@@ -37,6 +41,7 @@ export const ChatMessage: FC<Props> = memo(
         currentMessage,
         messageIsStreaming,
       },
+      handleSplitConversation,
       dispatch: homeDispatch,
     } = useContext(HomeContext);
 
@@ -239,7 +244,12 @@ export const ChatMessage: FC<Props> = memo(
             {message.role === 'assistant' ? (
               <IconRobot size={30} />
             ) : (
-              <IconUser size={30} />
+              <div className="flex gap-1 text-sm items-top">
+                <div className="absolute left-[-20px] text-gray-800">
+                  {messageIndex / 2 + 1}
+                </div>
+                <IconUser size={30} />
+              </div>
             )}
           </div>
 
@@ -323,6 +333,19 @@ export const ChatMessage: FC<Props> = memo(
                   </button>
 
                   <DeleteMessage onDeleteMessage={handleDeleteMessage} />
+
+                  {message.role === 'user' && messageIndex !== 0 && (
+                    <SplitConversation
+                      onSplitConversation={() => {
+                        if (selectedConversation) {
+                          handleSplitConversation(
+                            selectedConversation,
+                            messageIndex,
+                          );
+                        }
+                      }}
+                    />
+                  )}
                 </div>
               )}
             </div>

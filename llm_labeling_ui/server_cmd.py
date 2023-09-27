@@ -36,6 +36,7 @@ class StandaloneApplication(BaseApplication):
             for key, value in self.options.items()
             if key in self.cfg.settings and value is not None
         }
+        print(config)
         for key, value in config.items():
             self.cfg.set(key.lower(), value)
 
