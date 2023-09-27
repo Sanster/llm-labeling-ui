@@ -242,8 +242,10 @@ class Api:
             else:
                 return len(self.tokenizer(text)["input_ids"])
 
-        count = cached_count_tokens(req.text)
-        return CountTokensResponse(count=count)
+        return CountTokensResponse(
+            promptTokenCount=cached_count_tokens(req.prompt),
+            messagesTokenCounts=[cached_count_tokens(it) for it in req.messages],
+        )
 
     def add_api_route(self, path: str, endpoint, **kwargs):
         return self.app.add_api_route(path, endpoint, **kwargs)

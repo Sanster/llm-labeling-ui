@@ -18,10 +18,12 @@ export interface GetConversationsRequestProps {
 }
 
 export interface GetTokenCountRequestProps {
-  text: string;
+  prompt: string;
+  messages: string[];
 }
 export interface GetTokenCountResponseProps {
-  count: number;
+  promptTokenCount: number;
+  messagesTokenCounts: number[];
 }
 
 interface ConversationResponse {

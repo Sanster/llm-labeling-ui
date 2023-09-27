@@ -114,8 +114,10 @@ class SplitConversationRequest(BaseModel):
 
 
 class CountTokensRequest(BaseModel):
-    text: str
+    prompt: str
+    messages: List[str]
 
 
 class CountTokensResponse(BaseModel):
-    count: int
+    promptTokenCount: int
+    messagesTokenCounts: List[int]

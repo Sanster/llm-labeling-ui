@@ -67,7 +67,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
 
   const fetchService = useFetch();
   const { getTokenCount } = useApiService();
-  const debouncedSelectedConversation = useDebounce(selectedConversation, 300);
+  const debouncedSelectedConversation = useDebounce(selectedConversation, 500);
 
   const {
     data: tokenData,
@@ -76,22 +76,28 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
   } = useQuery(
     ['GetTokenCount', debouncedSelectedConversation],
     ({ signal }) => {
-      let text = '';
-      text += debouncedSelectedConversation
+      let messages: string[] = [];
+      debouncedSelectedConversation?.messages.forEach((message) => {
+        messages.push(message.content);
+      });
+      let prompt = debouncedSelectedConversation
         ? debouncedSelectedConversation.prompt
         : '';
-      debouncedSelectedConversation?.messages.forEach((message) => {
-        text += message.content;
-      });
       return getTokenCount(
         {
-          text,
+          prompt: prompt,
+          messages: messages,
         },
         signal,
       );
     },
     { enabled: true, refetchOnMount: false },
   );
+
+  const totalTokens = tokenData
+    ? tokenData?.promptTokenCount +
+      tokenData?.messagesTokenCounts.reduce((a, b) => a + b, 0)
+    : 0;
 
   const [currentMessage, setCurrentMessage] = useState<Message>();
   const [autoScrollEnabled, setAutoScrollEnabled] = useState<boolean>(true);
@@ -501,8 +507,8 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
             <div className="sticky top-0 z-10 flex justify-center border border-b-neutral-300 bg-neutral-100 py-2 text-sm text-neutral-500 dark:border-none dark:bg-[#444654] dark:text-neutral-200">
               {t('Model')}: {selectedConversation?.model.name} | {t('Temp')}:{' '}
               {selectedConversation?.temperature} | Message:{' '}
-              {selectedConversation?.messages.length} | Token:{' '}
-              {tokenData?.count}
+              {selectedConversation?.messages.length}{' '}
+              {totalTokens === 0 ? '' : `| ${t('Tokens')}: ${totalTokens}`}
               <button
                 className="ml-2 cursor-pointer hover:opacity-50"
                 onClick={handleSettings}
@@ -529,6 +535,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
                 key={index}
                 message={message}
                 messageIndex={index}
+                tokenData={tokenData}
                 onEdit={(editedMessage, onlySave) => {
                   setCurrentMessage(editedMessage);
                   // discard edited message and the ones that come after then resend
