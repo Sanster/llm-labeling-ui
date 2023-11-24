@@ -10,9 +10,8 @@ from uuid import UUID, uuid4
 import sqlmodel
 from loguru import logger
 from rich.progress import track
-from sqlalchemy import Column, select
+from sqlalchemy import Column, select, func, text
 from sqlmodel import SQLModel, Field, create_engine, Session, JSON, col
-from sqlalchemy import func
 
 from llm_labeling_ui.utils import (
     MESSAGE_FILTER_EQUAL,
@@ -294,7 +293,7 @@ class DBManager:
 
     def vacuum(self):
         with Session(self.engine) as session:
-            session.execute("VACUUM")
+            session.execute(text("VACUUM"))
 
     def _filter(
         self, statement, search_term, messageCountFilterCount, messageCountFilterMode

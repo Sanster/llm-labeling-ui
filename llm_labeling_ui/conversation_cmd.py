@@ -151,6 +151,9 @@ def replace_string(
     db_path: Path = typer.Option(None, exists=True, dir_okay=False),
     search: str = typer.Option(..., help="string to search"),
     replace: str = typer.Option(..., help="replacement string"),
+    role: str = typer.Option(
+        "all", help="role to search. user, assistant, system, all"
+    ),
     run: bool = typer.Option(False, help="run the command"),
 ):
     db = DBManager(db_path)
@@ -169,16 +172,18 @@ def replace_string(
             if preview_count < max_preview:
                 matched_messages.append(c.data["name"])
 
-        if search in c.data["prompt"]:
-            matched = True
-            if preview_count < max_preview:
-                matched_messages.append(c.data["prompt"])
-
-        for m in c.data["messages"]:
-            if search in m["content"]:
+        if role in ["system", "all"]:
+            if search in c.data["prompt"]:
                 matched = True
                 if preview_count < max_preview:
-                    matched_messages.append(m["content"])
+                    matched_messages.append(c.data["prompt"])
+
+        for m in c.data["messages"]:
+            if m["role"] == role or role == "all":
+                if search in m["content"]:
+                    matched = True
+                    if preview_count < max_preview:
+                        matched_messages.append(m["content"])
 
         if matched:
             preview_count += 1
@@ -202,9 +207,14 @@ def replace_string(
     if run:
         for it in track(matched_conversations, description="replacing string"):
             it.data["name"] = it.data["name"].replace(search, replace)
-            it.data["prompt"] = it.data["prompt"].replace(search, replace)
+
+            if role in ["system", "all"]:
+                it.data["prompt"] = it.data["prompt"].replace(search, replace)
+
             for m in it.data["messages"]:
-                m["content"] = m["content"].replace(search, replace)
+                if m["role"] == role or role == "all":
+                    m["content"] = m["content"].replace(search, replace)
+
             it.updated_at = datetime.utcnow()
             db.update_conversation(it)
         db.vacuum()

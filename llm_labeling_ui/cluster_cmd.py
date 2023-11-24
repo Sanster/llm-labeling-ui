@@ -301,7 +301,7 @@ def dedup(
         if strategy == DedupStrategy.max_messages_count:
             convs.sort(key=lambda it: it.messages_count(), reverse=True)
         elif strategy == DedupStrategy.max_messages_length:
-            convs.sort(key=lambda it: it.token_count(), reverse=True)
+            convs.sort(key=lambda it: it.token_count(tokenizer), reverse=True)
 
         convs_to_keep = convs[:cluster_keep]
         convs_to_delete = convs[cluster_keep:]
